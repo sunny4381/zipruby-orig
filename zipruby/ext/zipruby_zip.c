@@ -3,10 +3,13 @@
 #include "zipruby.h"
 #include "zipruby_zip.h"
 
+#define VERSION "0.0.1"
+
 VALUE Zip;
 
 void Init_zipruby_zip() {
   Zip = rb_define_module("Zip");
+  rb_define_const(Zip, "VERSION", rb_str_new2(VERSION));
 
   rb_define_const(Zip, "CREATE", INT2NUM(ZIP_CREATE));
   rb_define_const(Zip, "EXCL", INT2NUM(ZIP_EXCL));
