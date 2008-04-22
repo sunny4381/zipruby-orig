@@ -122,6 +122,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ext\zipruby_error.c"
+				>
+			</File>
+			<File
+				RelativePath=".\ext\zipruby_error.h"
+				>
+			</File>
+			<File
 				RelativePath=".\ext\zipruby_file.c"
 				>
 			</File>
