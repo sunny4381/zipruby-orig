@@ -39,7 +39,9 @@
 #include <zlib.h>
 
 #include "zip.h"
+#ifndef _WIN32
 #include "config.h"
+#endif
 
 #ifndef HAVE_MKSTEMP
 int _zip_mkstemp(char *);

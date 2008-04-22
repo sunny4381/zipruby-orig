@@ -42,6 +42,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#include <io.h>
+#define close(f) _close(f)
+#define rename(s, d) (MoveFileExA((s), (d), MOVEFILE_REPLACE_EXISTING) ? 0 : -1)
+#endif
+
 #include "zip.h"
 #include "zipint.h"
 
@@ -65,7 +72,9 @@ zip_close(struct zip *za)
     int i, j, error;
     char *temp;
     FILE *out;
+#ifndef _WIN32
     mode_t mask;
+#endif
     struct zip_cdir *cd;
     struct zip_dirent de;
     int reopen_on_error;
@@ -242,9 +251,11 @@ zip_close(struct zip *za)
 	}
 	return -1;
     }
+#ifndef _WIN32
     mask = umask(0);
     umask(mask);
     chmod(za->zn, 0666&~mask);
+#endif
 
     _zip_free(za);
     free(temp);

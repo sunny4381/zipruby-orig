@@ -37,6 +37,10 @@
 
 #include <string.h>
 
+#ifdef _WIN32
+#define strcasecmp _stricmp
+#endif
+
 #include "zip.h"
 #include "zipint.h"
 

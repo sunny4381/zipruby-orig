@@ -40,6 +40,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+#define snprintf _snprintf
+#endif
+
 #include "zip.h"
 #include "zipint.h"
 
