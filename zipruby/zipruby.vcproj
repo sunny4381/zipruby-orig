@@ -158,6 +158,10 @@
 				</File>
 			</Filter>
 		</Filter>
+		<File
+			RelativePath=".\zipruby.gemspec"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
