@@ -146,6 +146,18 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="lib"
+			>
+			<Filter
+				Name="i386-mswin32"
+				>
+				<File
+					RelativePath=".\lib\i386-mswin32\zipruby.so"
+					>
+				</File>
+			</Filter>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>
