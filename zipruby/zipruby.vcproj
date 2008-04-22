@@ -159,6 +159,10 @@
 			</Filter>
 		</Filter>
 		<File
+			RelativePath=".\package.sh"
+			>
+		</File>
+		<File
 			RelativePath=".\zipruby-mswin32.gemspec"
 			>
 		</File>
