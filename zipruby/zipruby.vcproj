@@ -159,6 +159,10 @@
 			</Filter>
 		</Filter>
 		<File
+			RelativePath=".\zipruby-mswin32.gemspec"
+			>
+		</File>
+		<File
 			RelativePath=".\zipruby.gemspec"
 			>
 		</File>
