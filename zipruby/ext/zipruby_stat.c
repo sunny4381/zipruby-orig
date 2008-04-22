@@ -1,0 +1,138 @@
+#include "ruby.h"
+#include "zip.h"
+#include "zipruby.h"
+#include "zipruby_archive.h"
+#include "zipruby_stat.h"
+
+static VALUE zipruby_stat_alloc(VALUE klass);
+static void zipruby_stat_free(struct zipruby_stat *p);
+static VALUE zipruby_stat_initialize(int argc, VALUE *argv, VALUE self);
+static VALUE zipruby_stat_name(VALUE self);
+static VALUE zipruby_stat_index(VALUE self);
+static VALUE zipruby_stat_crc(VALUE self);
+static VALUE zipruby_stat_size(VALUE self);
+static VALUE zipruby_stat_mtime(VALUE self);
+static VALUE zipruby_stat_comp_size(VALUE self);
+
+extern VALUE Zip;
+extern VALUE Archive;
+VALUE Stat;
+
+void Init_zipruby_stat() {
+  Stat = rb_define_class_under(Zip, "Stat", rb_cObject);
+  rb_define_alloc_func(Stat, zipruby_stat_alloc);
+  rb_define_method(Stat, "initialize", zipruby_stat_initialize, -1);
+  rb_define_method(Stat, "name", zipruby_stat_name, 0);
+  rb_define_method(Stat, "index", zipruby_stat_index, 0);
+  rb_define_method(Stat, "crc", zipruby_stat_crc, 0);
+  rb_define_method(Stat, "size", zipruby_stat_size, 0);
+  rb_define_method(Stat, "mtime", zipruby_stat_mtime, 0);
+  rb_define_method(Stat, "comp_size", zipruby_stat_comp_size, 0);
+}
+
+static VALUE zipruby_stat_alloc(VALUE klass) {
+  struct zipruby_stat *p = ALLOC(struct zipruby_stat);
+
+  p->sb = ALLOC(struct zip_stat);
+  zip_stat_init(p->sb);
+
+  return Data_Wrap_Struct(klass, 0, zipruby_stat_free, p);
+}
+
+static void zipruby_stat_free(struct zipruby_stat *p) {
+  xfree(p->sb);
+  xfree(p);
+}
+
+static VALUE zipruby_stat_initialize(int argc, VALUE *argv, VALUE self) {
+  VALUE archive, index, flags;
+  struct zipruby_archive *p_archive;
+  struct zipruby_stat *p_stat;
+  char *fname = NULL;
+  int i_index = -1, i_flags = 0;
+
+  rb_scan_args(argc, argv, "21", &archive, &index, &flags);
+
+  if (!rb_obj_is_instance_of(archive, Archive)) {
+    rb_raise(rb_eTypeError, "wrong argument type %s (expected Zip::Archive)", rb_class2name(CLASS_OF(archive)));
+  }
+
+  switch (TYPE(index)) {
+  case T_STRING: fname = StringValuePtr(index); break;
+  case T_FIXNUM: i_index = NUM2INT(index); break;
+  default:
+    rb_raise(rb_eTypeError, "wrong argument type %s (expected String or Fixnum)", rb_class2name(CLASS_OF(index)));
+  }
+
+  if (!NIL_P(flags)) {
+    i_flags = NUM2INT(flags);
+  }
+
+  Data_Get_Struct(archive, struct zipruby_archive, p_archive);
+  Check_Archive(p_archive);
+  Data_Get_Struct(self, struct zipruby_stat, p_stat);
+
+  if (fname) {
+    if (zip_stat(p_archive->archive, fname, i_flags, p_stat->sb) != 0) {
+      rb_raise(rb_eRuntimeError, "No such stat - %s", fname);
+    }
+  } else {
+    if (zip_stat_index(p_archive->archive, i_index, i_flags, p_stat->sb) != 0) {
+      rb_raise(rb_eRuntimeError, "No such stat ad %d", i_index);
+    }
+  }
+
+  return Qnil;
+}
+
+static VALUE zipruby_stat_name(VALUE self) {
+  struct zipruby_stat *p_stat;
+
+  Data_Get_Struct(self, struct zipruby_stat, p_stat);
+
+  return rb_str_new2(p_stat->sb->name);
+}
+
+static VALUE zipruby_stat_index(VALUE self) {
+  struct zipruby_stat *p_stat;
+
+  Data_Get_Struct(self, struct zipruby_stat, p_stat);
+
+  return INT2NUM(p_stat->sb->index);
+}
+
+static VALUE zipruby_stat_crc(VALUE self) {
+  struct zipruby_stat *p_stat;
+
+  Data_Get_Struct(self, struct zipruby_stat, p_stat);
+
+  return INT2NUM(p_stat->sb->crc);
+}
+
+static VALUE zipruby_stat_size(VALUE self) {
+  struct zipruby_stat *p_stat;
+
+  Data_Get_Struct(self, struct zipruby_stat, p_stat);
+
+  return LONG2NUM(p_stat->sb->size);
+}
+
+static VALUE zipruby_stat_mtime(VALUE self) {
+  struct zipruby_stat *p_stat;
+
+  Data_Get_Struct(self, struct zipruby_stat, p_stat);
+
+  return rb_funcall(rb_cTime, rb_intern("at"), 1,  LONG2NUM((long) p_stat->sb->mtime));
+}
+
+static VALUE zipruby_stat_comp_size(VALUE self) {
+  struct zipruby_stat *p_stat;
+
+  Data_Get_Struct(self, struct zipruby_stat, p_stat);
+
+  return LONG2NUM(p_stat->sb->comp_size);
+}
+
+// XXX:
+// unsigned short comp_method;         /* compression method used */
+// unsigned short encryption_method;   /* encryption method used */
