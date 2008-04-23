@@ -112,6 +112,12 @@ static VALUE zipruby_archive_s_open(int argc, VALUE *argv, VALUE self) {
     int status;
 
     retval = rb_protect(rb_yield, archive, &status);
+
+    if (status != 0) {
+      zip_unchange_all(p_archive->archive);
+      zip_unchange_archive(p_archive->archive);
+    }
+
     zipruby_archive_close(archive);
 
     if (status != 0) {
