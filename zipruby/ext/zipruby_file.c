@@ -56,14 +56,14 @@ void Init_zipruby_file() {
   rb_define_method(File, "rename", zipruby_file_rename, 1);
   rb_define_method(File, "unchange", zipruby_file_unchange, 1);
   rb_define_method(File, "revert", zipruby_file_revert, 1);
-  rb_define_method(File, "name", zipruby_file_name, 1);
-  rb_define_method(File, "index", zipruby_file_index, 1);
-  rb_define_method(File, "crc", zipruby_file_crc, 1);
-  rb_define_method(File, "size", zipruby_file_size, 1);
-  rb_define_method(File, "mtime", zipruby_file_mtime, 1);
-  rb_define_method(File, "comp_size", zipruby_file_comp_size, 1);
-  rb_define_method(File, "comp_method", zipruby_file_comp_method, 1);
-  rb_define_method(File, "encryption_method", zipruby_file_encryption_method, 1);
+  rb_define_method(File, "name", zipruby_file_name, 0);
+  rb_define_method(File, "index", zipruby_file_index, 0);
+  rb_define_method(File, "crc", zipruby_file_crc, 0);
+  rb_define_method(File, "size", zipruby_file_size, 0);
+  rb_define_method(File, "mtime", zipruby_file_mtime, 0);
+  rb_define_method(File, "comp_size", zipruby_file_comp_size, 0);
+  rb_define_method(File, "comp_method", zipruby_file_comp_method, 0);
+  rb_define_method(File, "encryption_method", zipruby_file_encryption_method, 0);
 }
 
 static VALUE zipruby_file_alloc(VALUE klass) {
