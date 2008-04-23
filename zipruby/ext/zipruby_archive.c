@@ -15,6 +15,7 @@ static VALUE zipruby_archive_get_stat(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_add_buffer(VALUE self, VALUE name, VALUE source);
 static VALUE zipruby_archive_add_file(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_add_filep(int argc, VALUE *argv, VALUE self);
+static VALUE zipruby_archive_add_zip(VALUE self, VALUE srcarchive);
 static VALUE zipruby_archive_replace_buffer(VALUE self, VALUE index, VALUE source);
 static VALUE zipruby_archive_replace_file(VALUE self, VALUE index, VALUE fname);
 static VALUE zipruby_archive_replace_filep(VALUE self, VALUE index, VALUE file);
@@ -50,6 +51,7 @@ void Init_zipruby_archive() {
   rb_define_method(Archive, "add_buffer", zipruby_archive_add_buffer, 2);
   rb_define_method(Archive, "add_file", zipruby_archive_add_file, -1);
   rb_define_method(Archive, "add_filep", zipruby_archive_add_filep, -1);
+  rb_define_method(Archive, "add_zip", zipruby_archive_add_zip, 1);
   rb_define_method(Archive, "replace_buffer", zipruby_archive_replace_buffer, 2);
   rb_define_method(Archive, "replace_file", zipruby_archive_replace_file, 2);
   rb_define_method(Archive, "replace_filep", zipruby_archive_replace_filep, 2);
@@ -390,6 +392,39 @@ static VALUE zipruby_archive_get_comment(int argc, VALUE *argv, VALUE self) {
   comment = zip_get_archive_comment(p_archive->archive, &lenp, i_flags);
 
   return comment ? rb_str_new(comment, lenp) : Qnil;
+}
+
+/* */
+static VALUE zipruby_archive_add_zip(VALUE self, VALUE srcarchive) {
+  struct zipruby_archive *p_archive, *p_srcarchive;
+  struct zip_source *zsource;
+  int i, num_files;
+
+  if (!rb_obj_is_instance_of(srcarchive, Archive)) {
+    rb_raise(rb_eTypeError, "wrong argument type %s (expected Zip::Archive)", rb_class2name(CLASS_OF(srcarchive)));
+  }
+
+  Data_Get_Struct(self, struct zipruby_archive, p_archive);
+  Check_Archive(p_archive);
+  Data_Get_Struct(srcarchive, struct zipruby_archive, p_srcarchive);
+  Check_Archive(p_srcarchive);
+
+  num_files = zip_get_num_files(p_srcarchive->archive);
+
+  for (i = 0; i < num_files; i++) {
+    if ((zsource = zip_source_zip(p_archive->archive, p_srcarchive->archive, i, 0, 0, -1)) == NULL) {
+      rb_raise(Error, "Add zip failed: %s", zip_strerror(p_archive->archive));
+    }
+
+    if (zip_add(p_archive->archive, zip_get_name(p_srcarchive->archive, i, 0), zsource) == -1) {
+      zip_source_free(zsource);
+      zip_unchange_all(p_archive->archive);
+      zip_unchange_archive(p_archive->archive);
+      rb_raise(Error, "Add zip failed: %s", zip_strerror(p_archive->archive));
+    }
+  }
+
+  return Qnil;
 }
 
 /* */
