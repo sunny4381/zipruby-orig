@@ -217,7 +217,12 @@ static VALUE zipruby_archive_add_buffer(VALUE self, VALUE name, VALUE source) {
   Check_Archive(p_archive);
 
   len = RSTRING(source)->len;
-  data = malloc(len);
+
+  if ((data = malloc(len)) == NULL) {
+    rb_raise(rb_eRuntimeError, "Add file failed: Cannot allocate memory");
+  }
+
+  memset(data, 0, len);
   memcpy(data, StringValuePtr(source), len);
 
   if ((zsource = zip_source_buffer(p_archive->archive, data, len, 1)) == NULL) {
