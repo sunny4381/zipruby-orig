@@ -32,6 +32,7 @@ extern VALUE Zip;
 extern VALUE Archive;
 VALUE File;
 extern VALUE Stat;
+extern VALUE Error;
 
 void Init_zipruby_file() {
   File = rb_define_class_under(Zip, "File", rb_cObject);
@@ -101,15 +102,13 @@ static VALUE zipruby_file_initialize(int argc, VALUE *argv, VALUE self) {
     fzip = zip_fopen(p_archive->archive, fname, i_flags);
 
     if (fzip == NULL) {
-      // XXX:
-      rb_raise(rb_eRuntimeError, "No such file - %s: %s", fname, zip_strerror(p_archive->archive));
+      rb_raise(Error, "Open file failed - %s: %s", fname, zip_strerror(p_archive->archive));
     }
   } else {
     fzip = zip_fopen_index(p_archive->archive, i_index, i_flags);
 
     if (fzip == NULL) {
-      // XXX:
-      rb_raise(rb_eRuntimeError, "No such file at %d", i_index, zip_strerror(p_archive->archive));
+      rb_raise(Error, "Open file failed at %d", i_index, zip_strerror(p_archive->archive));
     }
   }
 
@@ -134,8 +133,7 @@ static VALUE zipruby_file_close(VALUE self) {
   if ((error = zip_fclose(p_file->file)) != 0) {
     char errstr[ERRSTR_BUFSIZE];
     zip_error_to_str(errstr, ERRSTR_BUFSIZE, error, errno);
-    // XXX:
-    rb_raise(rb_eRuntimeError, "error closing file: %s", errstr);
+    rb_raise(Error, "Close file failed: %s", errstr);
   }
 
   p_file->archive = NULL;
@@ -156,15 +154,13 @@ static VALUE zipruby_file_read(VALUE self) {
   zip_stat_init(&sb);
 
   if (zip_stat_index(p_file->archive, p_file->sb->index, 0, &sb)) {
-    // XXX:
-    rb_raise(rb_eRuntimeError, "error reading file: %s", zip_strerror(p_file->archive));
+    rb_raise(Error, "Read file failed: %s", zip_strerror(p_file->archive));
   }
 
   buf = alloca(sb.size);
   
   if (zip_fread(p_file->file, buf, sb.size) == -1) {
-    // XXX:
-    rb_raise(rb_eRuntimeError, "error reading file");
+    rb_raise(Error, "Read file failed: %s", zip_file_strerror(p_file->file));
   }
 
   return rb_str_new(buf, sb.size);
@@ -194,7 +190,7 @@ static VALUE zipruby_file_get_comment(int argc, VALUE *argv, VALUE self) {
   Data_Get_Struct(self, struct zipruby_file, p_file);
   Check_File(p_file);
 
-  // XXX:
+  // XXX: How is the error checked?
   comment = zip_get_file_comment(p_file->archive, p_file->sb->index, &lenp, i_flags);
 
   return comment ? rb_str_new(comment, lenp) : Qnil;
@@ -215,8 +211,7 @@ static VALUE zipruby_file_set_comment(VALUE self, VALUE comment) {
   Check_File(p_file);
 
   if (zip_set_file_comment(p_file->archive, p_file->sb->index, s_comment, len) == -1) {
-    // XXX:
-    rb_raise(rb_eRuntimeError, "error commenting file: %s", zip_strerror(p_file->archive));
+    rb_raise(Error, "Comment file failed - %s: %s", p_file->sb->name, zip_strerror(p_file->archive));
   }
 
   return Qnil;
@@ -229,8 +224,7 @@ static VALUE zipruby_file_delete(VALUE self) {
   Check_File(p_file);
 
   if (zip_delete(p_file->archive, p_file->sb->index) == -1) {
-    // XXX:
-    rb_raise(rb_eRuntimeError, "error deleting file: %s", zip_strerror(p_file->archive));
+    rb_raise(Error, "Delete file failed - %s: %s", p_file->sb->name, zip_strerror(p_file->archive));
   }
 
   return Qnil;
@@ -243,8 +237,7 @@ static VALUE zipruby_file_rename(VALUE self, VALUE name) {
   Check_File(p_file);
 
   if (zip_rename(p_file->archive, p_file->sb->index, StringValuePtr(name)) == -1) {
-    // XXX:
-    rb_raise(rb_eRuntimeError, "error renaming file: %s", zip_strerror(p_file->archive));
+    rb_raise(Error, "Rename file failed - %s: %s", p_file->sb->name, zip_strerror(p_file->archive));
   }
 
   return Qnil;
@@ -257,8 +250,7 @@ static VALUE zipruby_file_unchange(VALUE self) {
   Check_File(p_file);
 
   if (zip_unchange(p_file->archive, p_file->sb->index) == -1) {
-    // XXX:
-    rb_raise(rb_eRuntimeError, "error unchenging file: %s", zip_strerror(p_file->archive));
+    rb_raise(Error, "Unchange file failed - %s: %s", p_file->sb->name, zip_strerror(p_file->archive));
   }
 
   return Qnil;
