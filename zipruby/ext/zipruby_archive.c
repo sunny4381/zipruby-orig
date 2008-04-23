@@ -131,6 +131,8 @@ static VALUE zipruby_archive_close(VALUE self) {
   Check_Archive(p_archive);
 
   if (zip_close(p_archive->archive) == -1) {
+    zip_unchange_all(p_archive->archive);
+    zip_unchange_archive(p_archive->archive);
     rb_raise(Error, "Close archive failed: %s", zip_strerror(p_archive->archive));
   }
 
@@ -231,6 +233,8 @@ static VALUE zipruby_archive_add_buffer(VALUE self, VALUE name, VALUE source) {
 
   if (zip_add(p_archive->archive, StringValuePtr(name), zsource) == -1) {
     zip_source_free(zsource);
+    zip_unchange_all(p_archive->archive);
+    zip_unchange_archive(p_archive->archive);
     rb_raise(Error, "Add file failed - %s: %s", StringValuePtr(name), zip_strerror(p_archive->archive));
   }
 
@@ -259,6 +263,8 @@ static VALUE zipruby_archive_replace_buffer(VALUE self, VALUE index, VALUE sourc
 
   if (zip_replace(p_archive->archive, NUM2INT(index), zsource) == -1) {
     zip_source_free(zsource);
+    zip_unchange_all(p_archive->archive);
+    zip_unchange_archive(p_archive->archive);
     rb_raise(Error, "Replace file failed at %d: %s", NUM2INT(index), zip_strerror(p_archive->archive));
   }
 
@@ -293,6 +299,8 @@ static VALUE zipruby_archive_add_file(int argc, VALUE *argv, VALUE self) {
 
   if (zip_add(p_archive->archive, StringValuePtr(name), zsource) == -1) {
     zip_source_free(zsource);
+    zip_unchange_all(p_archive->archive);
+    zip_unchange_archive(p_archive->archive);
     rb_raise(Error, "Add file failed - %s: %s", StringValuePtr(name), zip_strerror(p_archive->archive));
   }
 
@@ -314,6 +322,8 @@ static VALUE zipruby_archive_replace_file(VALUE self, VALUE index, VALUE fname) 
 
   if (zip_replace(p_archive->archive, NUM2INT(index), zsource) == -1) {
     zip_source_free(zsource);
+    zip_unchange_all(p_archive->archive);
+    zip_unchange_archive(p_archive->archive);
     rb_raise(Error, "Replace file failed at %d: %s", NUM2INT(index), zip_strerror(p_archive->archive));
   }
 
@@ -395,6 +405,8 @@ static VALUE zipruby_archive_set_comment(VALUE self, VALUE comment) {
   Check_Archive(p_archive);
 
   if (zip_set_archive_comment(p_archive->archive, s_comment, len) == -1) {
+    zip_unchange_all(p_archive->archive);
+    zip_unchange_archive(p_archive->archive);
     rb_raise(Error, "Comment archived failed: %s", zip_strerror(p_archive->archive));
   }
 
@@ -455,6 +467,8 @@ static VALUE zipruby_archive_set_fcomment(VALUE self, VALUE index, VALUE comment
   Check_Archive(p_archive);
 
   if (zip_set_file_comment(p_archive->archive, NUM2INT(index), s_comment, len) == -1) {
+    zip_unchange_all(p_archive->archive);
+    zip_unchange_archive(p_archive->archive);
     rb_raise(Error, "Comment file failed at %d: %s", NUM2INT(index), zip_strerror(p_archive->archive));
   }
 
@@ -468,6 +482,8 @@ static VALUE zipruby_archive_fdelete(VALUE self, VALUE index) {
   Check_Archive(p_archive);
 
   if (zip_delete(p_archive->archive, NUM2INT(index)) == -1) {
+    zip_unchange_all(p_archive->archive);
+    zip_unchange_archive(p_archive->archive);
     rb_raise(Error, "Delete file failed at %d: %s", NUM2INT(index), zip_strerror(p_archive->archive));
   }
 
@@ -481,6 +497,8 @@ static VALUE zipruby_archive_frename(VALUE self, VALUE index, VALUE name) {
   Check_Archive(p_archive);
 
   if (zip_rename(p_archive->archive, NUM2INT(index), StringValuePtr(name)) == -1) {
+    zip_unchange_all(p_archive->archive);
+    zip_unchange_archive(p_archive->archive);
     rb_raise(Error, "Rename file failed at %d: %s", NUM2INT(index), zip_strerror(p_archive->archive));
   }
 
@@ -494,6 +512,8 @@ static VALUE zipruby_archive_funchange(VALUE self, VALUE index) {
   Check_Archive(p_archive);
 
   if (zip_unchange(p_archive->archive, NUM2INT(index)) == -1) {
+    zip_unchange_all(p_archive->archive);
+    zip_unchange_archive(p_archive->archive);
     rb_raise(Error, "Unchange file failed at %d: %s", NUM2INT(index), zip_strerror(p_archive->archive));
   }
 
