@@ -44,6 +44,7 @@ extern VALUE Error;
 void Init_zipruby_archive() {
   Archive = rb_define_class_under(Zip, "Archive", rb_cObject);
   rb_define_alloc_func(Archive, zipruby_archive_alloc);
+  rb_include_module(Archive, rb_mEnumerable);
   rb_define_singleton_method(Archive, "open", zipruby_archive_s_open, -1);
   rb_define_method(Archive, "close", zipruby_archive_close, 0);
   rb_define_method(Archive, "num_files", zipruby_archive_num_files, 0);
