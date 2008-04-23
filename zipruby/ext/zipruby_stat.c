@@ -17,6 +17,7 @@ static VALUE zipruby_stat_comp_size(VALUE self);
 extern VALUE Zip;
 extern VALUE Archive;
 VALUE Stat;
+extern VALUE Error;
 
 void Init_zipruby_stat() {
   Stat = rb_define_class_under(Zip, "Stat", rb_cObject);
@@ -74,11 +75,11 @@ static VALUE zipruby_stat_initialize(int argc, VALUE *argv, VALUE self) {
 
   if (fname) {
     if (zip_stat(p_archive->archive, fname, i_flags, p_stat->sb) != 0) {
-      rb_raise(rb_eRuntimeError, "No such stat - %s", fname);
+      rb_raise(Error, "Obtain file status failed - %s: %s", fname, zip_strerror(p_archive->archive));
     }
   } else {
     if (zip_stat_index(p_archive->archive, i_index, i_flags, p_stat->sb) != 0) {
-      rb_raise(rb_eRuntimeError, "No such stat ad %d", i_index);
+      rb_raise(Error, "Obtain file status failed at %d: %s", i_index, zip_strerror(p_archive->archive));
     }
   }
 
