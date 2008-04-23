@@ -149,6 +149,7 @@ static VALUE zipruby_file_close(VALUE self) {
   if ((error = zip_fclose(p_file->file)) != 0) {
     char errstr[ERRSTR_BUFSIZE];
     zip_error_to_str(errstr, ERRSTR_BUFSIZE, error, errno);
+    zip_unchange(p_file->archive, p_file->sb->index);
     rb_raise(Error, "Close file failed: %s", errstr);
   }
 
@@ -227,6 +228,8 @@ static VALUE zipruby_file_set_comment(VALUE self, VALUE comment) {
   Check_File(p_file);
 
   if (zip_set_file_comment(p_file->archive, p_file->sb->index, s_comment, len) == -1) {
+    zip_unchange_all(p_file->archive);
+    zip_unchange_archive(p_file->archive);
     rb_raise(Error, "Comment file failed - %s: %s", p_file->sb->name, zip_strerror(p_file->archive));
   }
 
@@ -240,6 +243,8 @@ static VALUE zipruby_file_delete(VALUE self) {
   Check_File(p_file);
 
   if (zip_delete(p_file->archive, p_file->sb->index) == -1) {
+    zip_unchange_all(p_file->archive);
+    zip_unchange_archive(p_file->archive);
     rb_raise(Error, "Delete file failed - %s: %s", p_file->sb->name, zip_strerror(p_file->archive));
   }
 
@@ -253,6 +258,8 @@ static VALUE zipruby_file_rename(VALUE self, VALUE name) {
   Check_File(p_file);
 
   if (zip_rename(p_file->archive, p_file->sb->index, StringValuePtr(name)) == -1) {
+    zip_unchange_all(p_file->archive);
+    zip_unchange_archive(p_file->archive);
     rb_raise(Error, "Rename file failed - %s: %s", p_file->sb->name, zip_strerror(p_file->archive));
   }
 
