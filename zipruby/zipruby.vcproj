@@ -92,6 +92,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="copy &quot;$(OutDir)\$(ProjectName).so&quot; &quot;$(ProjectDir)lib\i386-mswin32&quot;"
 			/>
 		</Configuration>
 	</Configurations>
