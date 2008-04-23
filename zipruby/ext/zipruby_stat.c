@@ -95,7 +95,7 @@ static VALUE zipruby_stat_name(VALUE self) {
 
   Data_Get_Struct(self, struct zipruby_stat, p_stat);
 
-  return rb_str_new2(p_stat->sb->name);
+  return p_stat->sb->name ? rb_str_new2(p_stat->sb->name) : Qnil;
 }
 
 static VALUE zipruby_stat_index(VALUE self) {
