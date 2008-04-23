@@ -18,8 +18,6 @@ static VALUE zipruby_archive_add_filep(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_replace_buffer(VALUE self, VALUE index, VALUE source);
 static VALUE zipruby_archive_replace_file(VALUE self, VALUE index, VALUE fname);
 static VALUE zipruby_archive_replace_filep(VALUE self, VALUE index, VALUE file);
-static VALUE zipruby_archive_add_function(VALUE self, VALUE name, VALUE function);
-static VALUE zipruby_archive_replace_function(VALUE self, VALUE index, VALUE function);
 static ssize_t zipruby_zip_source_callback(void *state, void *data, size_t len, enum zip_source_cmd cmd);
 static VALUE zipruby_archive_get_comment(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_set_comment(VALUE self, VALUE comment);
@@ -54,11 +52,9 @@ void Init_zipruby_archive() {
   rb_define_method(Archive, "add_buffer", zipruby_archive_add_buffer, 2);
   rb_define_method(Archive, "add_file", zipruby_archive_add_file, -1);
   rb_define_method(Archive, "add_filep", zipruby_archive_add_filep, -1);
-  rb_define_method(Archive, "add_function", zipruby_archive_add_function, 2);
   rb_define_method(Archive, "replace_buffer", zipruby_archive_replace_buffer, 2);
   rb_define_method(Archive, "replace_file", zipruby_archive_replace_file, 2);
   rb_define_method(Archive, "replace_filep", zipruby_archive_replace_filep, 2);
-  rb_define_method(Archive, "replace_function", zipruby_archive_replace_function, 2);
   rb_define_method(Archive, "<<", zipruby_archive_add_filep, -1);
   rb_define_method(Archive, "get_comment", zipruby_archive_get_comment, -1);
   rb_define_method(Archive, "comment", zipruby_archive_get_comment, -1);
@@ -352,56 +348,6 @@ static VALUE zipruby_archive_replace_filep(VALUE self, VALUE index, VALUE file) 
   source = rb_funcall(file, rb_intern("read"), 0);
 
   return zipruby_archive_replace_buffer(self, index,  source);
-}
-
-static VALUE zipruby_archive_add_function(VALUE self, VALUE name, VALUE function) {
-  struct zipruby_archive *p_archive;
-  struct zip_source *zsource;
-
-  Check_Type(name, T_STRING);
-
-  if (!rb_obj_is_instance_of(function, rb_cProc)) {
-    rb_raise(rb_eTypeError, "wrong argument type %s (expected Proc)", rb_class2name(CLASS_OF(function)));
-  }
-
-  Data_Get_Struct(self, struct zipruby_archive, p_archive);
-  Check_Archive(p_archive);
-
-  if ((zsource = zip_source_function(p_archive->archive, zipruby_zip_source_callback, (void *) function)) == NULL) {
-    rb_raise(Error, "Add file failed - %s: %s", StringValuePtr(name), zip_strerror(p_archive->archive));
-  }
-
-  if (zip_add(p_archive->archive, StringValuePtr(name), zsource) == -1) {
-    zip_source_free(zsource);
-    rb_raise(Error, "Add file failed - %s: %s", StringValuePtr(name), zip_strerror(p_archive->archive));
-  }
-
-  return Qnil;
-}
-
-static VALUE zipruby_archive_replace_function(VALUE self, VALUE index, VALUE function) {
-  struct zipruby_archive *p_archive;
-  struct zip_source *zsource;
-
-  Check_Type(index, T_FIXNUM);
-
-  if (!rb_obj_is_instance_of(function, rb_cProc)) {
-    rb_raise(rb_eTypeError, "wrong argument type %s (expected Proc)", rb_class2name(CLASS_OF(function)));
-  }
-
-  Data_Get_Struct(self, struct zipruby_archive, p_archive);
-  Check_Archive(p_archive);
-
-  if ((zsource = zip_source_function(p_archive->archive, zipruby_zip_source_callback, (void *) function)) == NULL) {
-    rb_raise(Error, "Replace file failed at %d: %s", NUM2INT(index), zip_strerror(p_archive->archive));
-  }
-
-  if (zip_replace(p_archive->archive, NUM2INT(index), zsource) == -1) {
-    zip_source_free(zsource);
-    rb_raise(Error, "Replace file failed at %d: %s", NUM2INT(index), zip_strerror(p_archive->archive));
-  }
-
-  return Qnil;
 }
 
 static ssize_t zipruby_zip_source_callback(void *state, void *data, size_t len, enum zip_source_cmd cmd) {
