@@ -33,6 +33,7 @@ static VALUE zipruby_archive_funchange_all(VALUE self);
 static VALUE zipruby_archive_unchange(VALUE self);
 static VALUE zipruby_archive_frevert(VALUE self, VALUE index);
 static VALUE zipruby_archive_revert(VALUE self);
+static VALUE zipruby_archive_each(VALUE self);
 
 extern VALUE Zip;
 VALUE Archive;
@@ -71,6 +72,7 @@ void Init_zipruby_archive() {
   rb_define_method(Archive, "unchange", zipruby_archive_unchange, 0);
   rb_define_method(Archive, "frevert", zipruby_archive_frevert, 1);
   rb_define_method(Archive, "revert", zipruby_archive_revert, 0);
+  rb_define_method(Archive, "each", zipruby_archive_each, 0);
 }
 
 static VALUE zipruby_archive_alloc(VALUE klass) {
@@ -582,10 +584,33 @@ static VALUE zipruby_archive_unchange(VALUE self) {
   return Qnil;
 }
 
-
 static VALUE zipruby_archive_revert(VALUE self) {
   zipruby_archive_funchange_all(self);
   zipruby_archive_unchange(self);
+
+  return Qnil;
+}
+
+static VALUE zipruby_archive_each(VALUE self) {
+  struct zipruby_archive *p_archive;
+  int i, num_files;
+
+  Data_Get_Struct(self, struct zipruby_archive, p_archive);
+  Check_Archive(p_archive);
+  num_files = zip_get_num_files(p_archive->archive);
+
+  for (i = 0; i < num_files; i++) {
+    VALUE file;
+    int status;
+
+    file = rb_funcall(File, rb_intern("new"), 2, self, INT2NUM(i));
+    rb_protect(rb_yield, file, &status);
+    rb_funcall(file, rb_intern("close"), 0);
+
+    if (status != 0) {
+      rb_jump_tag(status);
+    }
+  }
 
   return Qnil;
 }
