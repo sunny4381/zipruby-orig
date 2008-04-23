@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name              = 'zipruby'
-  spec.version           = '0.0.1'
+  spec.version           = '0.1.0'
   spec.platform          = 'mswin32'
   spec.summary           = 'Ruby bindings for libzip.'
   spec.require_paths     = %w(lib/i386-mswin32)
