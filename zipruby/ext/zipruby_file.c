@@ -26,7 +26,6 @@ static VALUE zipruby_file_set_comment(VALUE self, VALUE comment);
 static VALUE zipruby_file_delete(VALUE self);
 static VALUE zipruby_file_rename(VALUE self, VALUE name);
 static VALUE zipruby_file_unchange(VALUE self);
-static VALUE zipruby_file_revert(VALUE self);
 static VALUE zipruby_file_name(VALUE self);
 static VALUE zipruby_file_index(VALUE self);
 static VALUE zipruby_file_crc(VALUE self);
@@ -55,7 +54,7 @@ void Init_zipruby_file() {
   rb_define_method(File, "delete", zipruby_file_delete, 0);
   rb_define_method(File, "rename", zipruby_file_rename, 1);
   rb_define_method(File, "unchange", zipruby_file_unchange, 1);
-  rb_define_method(File, "revert", zipruby_file_revert, 1);
+  rb_define_method(File, "revert", zipruby_file_unchange, 1);
   rb_define_method(File, "name", zipruby_file_name, 0);
   rb_define_method(File, "index", zipruby_file_index, 0);
   rb_define_method(File, "crc", zipruby_file_crc, 0);
@@ -277,10 +276,6 @@ static VALUE zipruby_file_unchange(VALUE self) {
   }
 
   return Qnil;
-}
-
-static VALUE zipruby_file_revert(VALUE self) {
-  return zipruby_file_unchange(self);
 }
 
 static VALUE zipruby_file_name(VALUE self) {
