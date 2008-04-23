@@ -105,7 +105,6 @@ static VALUE zipruby_archive_s_open(int argc, VALUE *argv, VALUE self) {
   if ((p_archive->archive = zip_open(StringValuePtr(path), i_flags, &errorp)) == NULL) {
     char errstr[ERRSTR_BUFSIZE];
     zip_error_to_str(errstr, ERRSTR_BUFSIZE, errorp, errno);
-    // XXX:
     rb_raise(Error, "Open archive failed - %s: %s", StringValuePtr(path), errstr);
   }
 
