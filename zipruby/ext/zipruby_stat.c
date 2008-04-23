@@ -13,6 +13,8 @@ static VALUE zipruby_stat_crc(VALUE self);
 static VALUE zipruby_stat_size(VALUE self);
 static VALUE zipruby_stat_mtime(VALUE self);
 static VALUE zipruby_stat_comp_size(VALUE self);
+static VALUE zipruby_stat_comp_method(VALUE self);
+static VALUE zipruby_stat_encryption_method(VALUE self);
 
 extern VALUE Zip;
 extern VALUE Archive;
@@ -29,6 +31,8 @@ void Init_zipruby_stat() {
   rb_define_method(Stat, "size", zipruby_stat_size, 0);
   rb_define_method(Stat, "mtime", zipruby_stat_mtime, 0);
   rb_define_method(Stat, "comp_size", zipruby_stat_comp_size, 0);
+  rb_define_method(Stat, "comp_method", zipruby_stat_comp_method, 0);
+  rb_define_method(Stat, "encryption_method", zipruby_stat_encryption_method, 0);
 }
 
 static VALUE zipruby_stat_alloc(VALUE klass) {
@@ -134,6 +138,18 @@ static VALUE zipruby_stat_comp_size(VALUE self) {
   return LONG2NUM(p_stat->sb->comp_size);
 }
 
-// XXX:
-// unsigned short comp_method;         /* compression method used */
-// unsigned short encryption_method;   /* encryption method used */
+static VALUE zipruby_stat_comp_method(VALUE self) {
+  struct zipruby_stat *p_stat;
+
+  Data_Get_Struct(self, struct zipruby_stat, p_stat);
+
+  return INT2NUM(p_stat->sb->comp_method);
+}
+
+static VALUE zipruby_stat_encryption_method(VALUE self) {
+  struct zipruby_stat *p_stat;
+
+  Data_Get_Struct(self, struct zipruby_stat, p_stat);
+
+  return INT2NUM(p_stat->sb->encryption_method);
+}
