@@ -3,8 +3,6 @@
 #include "zipruby.h"
 #include "zipruby_zip.h"
 
-#define VERSION "0.0.1"
-
 VALUE Zip;
 
 void Init_zipruby_zip() {
