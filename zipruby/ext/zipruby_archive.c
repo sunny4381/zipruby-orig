@@ -29,7 +29,6 @@ static VALUE zipruby_archive_frename(VALUE self, VALUE index, VALUE name);
 static VALUE zipruby_archive_funchange(VALUE self, VALUE index);
 static VALUE zipruby_archive_funchange_all(VALUE self);
 static VALUE zipruby_archive_unchange(VALUE self);
-static VALUE zipruby_archive_frevert(VALUE self, VALUE index);
 static VALUE zipruby_archive_revert(VALUE self);
 static VALUE zipruby_archive_each(VALUE self);
 
@@ -67,7 +66,7 @@ void Init_zipruby_archive() {
   rb_define_method(Archive, "funchange", zipruby_archive_funchange, 1);
   rb_define_method(Archive, "funchange_all", zipruby_archive_funchange_all, 0);
   rb_define_method(Archive, "unchange", zipruby_archive_unchange, 0);
-  rb_define_method(Archive, "frevert", zipruby_archive_frevert, 1);
+  rb_define_method(Archive, "frevert", zipruby_archive_unchange, 1);
   rb_define_method(Archive, "revert", zipruby_archive_revert, 0);
   rb_define_method(Archive, "each", zipruby_archive_each, 0);
 }
@@ -519,11 +518,6 @@ static VALUE zipruby_archive_funchange(VALUE self, VALUE index) {
 
   return Qnil;
 }
-
-static VALUE zipruby_archive_frevert(VALUE self, VALUE index) {
-  return zipruby_archive_funchange(self, index);
-}
-
 
 static VALUE zipruby_archive_funchange_all(VALUE self) {
   struct zipruby_archive *p_archive;
