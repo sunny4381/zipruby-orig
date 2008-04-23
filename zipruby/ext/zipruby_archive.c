@@ -18,7 +18,6 @@ static VALUE zipruby_archive_add_filep(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_replace_buffer(VALUE self, VALUE index, VALUE source);
 static VALUE zipruby_archive_replace_file(VALUE self, VALUE index, VALUE fname);
 static VALUE zipruby_archive_replace_filep(VALUE self, VALUE index, VALUE file);
-static ssize_t zipruby_zip_source_callback(void *state, void *data, size_t len, enum zip_source_cmd cmd);
 static VALUE zipruby_archive_get_comment(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_set_comment(VALUE self, VALUE comment);
 static VALUE zipruby_archive_locate_name(int argc, VALUE *argv, VALUE self);
@@ -357,15 +356,6 @@ static VALUE zipruby_archive_replace_filep(VALUE self, VALUE index, VALUE file) 
   source = rb_funcall(file, rb_intern("read"), 0);
 
   return zipruby_archive_replace_buffer(self, index,  source);
-}
-
-static ssize_t zipruby_zip_source_callback(void *state, void *data, size_t len, enum zip_source_cmd cmd) {
-  VALUE function = (VALUE) state;
-  VALUE retval;
-
-  retval = rb_funcall(function, rb_intern("call"), 2, rb_str_new(data, len), INT2NUM(cmd));
-
-  return NUM2INT(retval);
 }
 
 static VALUE zipruby_archive_get_comment(int argc, VALUE *argv, VALUE self) {
