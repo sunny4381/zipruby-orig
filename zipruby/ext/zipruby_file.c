@@ -84,6 +84,7 @@ static void zipruby_file_free(struct zipruby_file *p) {
   xfree(p);
 }
 
+/* */
 static VALUE zipruby_file_initialize(int argc, VALUE *argv, VALUE self) {
   VALUE archive, index, flags, stat_flags;
   struct zipruby_archive *p_archive;
@@ -138,6 +139,7 @@ static VALUE zipruby_file_initialize(int argc, VALUE *argv, VALUE self) {
   return Qnil;
 }
 
+/* */
 static VALUE zipruby_file_close(VALUE self) {
   struct zipruby_file *p_file;
   int error;
@@ -159,6 +161,7 @@ static VALUE zipruby_file_close(VALUE self) {
   return Qnil;
 }
 
+/* */
 static VALUE zipruby_file_read(VALUE self) {
   struct zipruby_file *p_file;
   struct zip_stat sb;
@@ -182,6 +185,7 @@ static VALUE zipruby_file_read(VALUE self) {
   return rb_str_new(buf, sb.size);
 }
 
+/* */
 static VALUE zipruby_file_stat(VALUE self) {
   struct zipruby_file *p_file;
 
@@ -191,6 +195,7 @@ static VALUE zipruby_file_stat(VALUE self) {
   return p_file->v_sb;
 }
 
+/* */
 static VALUE zipruby_file_get_comment(int argc, VALUE *argv, VALUE self) {
   VALUE flags;
   struct zipruby_file *p_file;
@@ -212,6 +217,7 @@ static VALUE zipruby_file_get_comment(int argc, VALUE *argv, VALUE self) {
   return comment ? rb_str_new(comment, lenp) : Qnil;
 }
 
+/* */
 static VALUE zipruby_file_set_comment(VALUE self, VALUE comment) {
   struct zipruby_file *p_file;
   char *s_comment = NULL;
@@ -235,6 +241,7 @@ static VALUE zipruby_file_set_comment(VALUE self, VALUE comment) {
   return Qnil;
 }
 
+/* */
 static VALUE zipruby_file_delete(VALUE self) {
   struct zipruby_file *p_file;
 
@@ -250,6 +257,7 @@ static VALUE zipruby_file_delete(VALUE self) {
   return Qnil;
 }
 
+/* */
 static VALUE zipruby_file_rename(VALUE self, VALUE name) {
   struct zipruby_file *p_file;
 
@@ -265,6 +273,7 @@ static VALUE zipruby_file_rename(VALUE self, VALUE name) {
   return Qnil;
 }
 
+/* */
 static VALUE zipruby_file_unchange(VALUE self) {
   struct zipruby_file *p_file;
 
@@ -278,6 +287,7 @@ static VALUE zipruby_file_unchange(VALUE self) {
   return Qnil;
 }
 
+/* */
 static VALUE zipruby_file_name(VALUE self) {
   struct zipruby_file *p_file;
 
@@ -287,6 +297,7 @@ static VALUE zipruby_file_name(VALUE self) {
   return rb_funcall(p_file->v_sb, rb_intern("name"), 0);
 }
 
+/* */
 static VALUE zipruby_file_index(VALUE self) {
   struct zipruby_file *p_file;
 
@@ -296,6 +307,7 @@ static VALUE zipruby_file_index(VALUE self) {
   return rb_funcall(p_file->v_sb, rb_intern("index"), 0);
 }
 
+/* */
 static VALUE zipruby_file_crc(VALUE self) {
   struct zipruby_file *p_file;
 
@@ -305,6 +317,7 @@ static VALUE zipruby_file_crc(VALUE self) {
   return rb_funcall(p_file->v_sb, rb_intern("crc"), 0);
 }
 
+/* */
 static VALUE zipruby_file_size(VALUE self) {
   struct zipruby_file *p_file;
 
@@ -314,6 +327,7 @@ static VALUE zipruby_file_size(VALUE self) {
   return rb_funcall(p_file->v_sb, rb_intern("size"), 0);
 }
 
+/* */
 static VALUE zipruby_file_mtime(VALUE self) {
   struct zipruby_file *p_file;
 
@@ -323,6 +337,7 @@ static VALUE zipruby_file_mtime(VALUE self) {
   return rb_funcall(p_file->v_sb, rb_intern("mtime"), 0);
 }
 
+/* */
 static VALUE zipruby_file_comp_size(VALUE self) {
   struct zipruby_file *p_file;
 
@@ -332,6 +347,7 @@ static VALUE zipruby_file_comp_size(VALUE self) {
   return rb_funcall(p_file->v_sb, rb_intern("comp_size"), 0);
 }
 
+/* */
 static VALUE zipruby_file_comp_method(VALUE self) {
   struct zipruby_file *p_file;
 
@@ -341,6 +357,7 @@ static VALUE zipruby_file_comp_method(VALUE self) {
   return rb_funcall(p_file->v_sb, rb_intern("comp_method"), 0);
 }
 
+/* */
 static VALUE zipruby_file_encryption_method(VALUE self) {
   struct zipruby_file *p_file;
 

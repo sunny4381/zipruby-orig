@@ -49,6 +49,7 @@ static void zipruby_stat_free(struct zipruby_stat *p) {
   xfree(p);
 }
 
+/* */
 static VALUE zipruby_stat_initialize(int argc, VALUE *argv, VALUE self) {
   VALUE archive, index, flags;
   struct zipruby_archive *p_archive;
@@ -90,6 +91,7 @@ static VALUE zipruby_stat_initialize(int argc, VALUE *argv, VALUE self) {
   return Qnil;
 }
 
+/* */
 static VALUE zipruby_stat_name(VALUE self) {
   struct zipruby_stat *p_stat;
 
@@ -98,6 +100,7 @@ static VALUE zipruby_stat_name(VALUE self) {
   return p_stat->sb->name ? rb_str_new2(p_stat->sb->name) : Qnil;
 }
 
+/* */
 static VALUE zipruby_stat_index(VALUE self) {
   struct zipruby_stat *p_stat;
 
@@ -106,6 +109,7 @@ static VALUE zipruby_stat_index(VALUE self) {
   return INT2NUM(p_stat->sb->index);
 }
 
+/* */
 static VALUE zipruby_stat_crc(VALUE self) {
   struct zipruby_stat *p_stat;
 
@@ -114,6 +118,7 @@ static VALUE zipruby_stat_crc(VALUE self) {
   return UINT2NUM(p_stat->sb->crc);
 }
 
+/* */
 static VALUE zipruby_stat_size(VALUE self) {
   struct zipruby_stat *p_stat;
 
@@ -122,6 +127,7 @@ static VALUE zipruby_stat_size(VALUE self) {
   return LONG2NUM(p_stat->sb->size);
 }
 
+/* */
 static VALUE zipruby_stat_mtime(VALUE self) {
   struct zipruby_stat *p_stat;
 
@@ -130,6 +136,7 @@ static VALUE zipruby_stat_mtime(VALUE self) {
   return rb_funcall(rb_cTime, rb_intern("at"), 1,  LONG2NUM((long) p_stat->sb->mtime));
 }
 
+/* */
 static VALUE zipruby_stat_comp_size(VALUE self) {
   struct zipruby_stat *p_stat;
 
@@ -138,6 +145,7 @@ static VALUE zipruby_stat_comp_size(VALUE self) {
   return LONG2NUM(p_stat->sb->comp_size);
 }
 
+/* */
 static VALUE zipruby_stat_comp_method(VALUE self) {
   struct zipruby_stat *p_stat;
 
@@ -146,6 +154,7 @@ static VALUE zipruby_stat_comp_method(VALUE self) {
   return INT2NUM(p_stat->sb->comp_method);
 }
 
+/* */
 static VALUE zipruby_stat_encryption_method(VALUE self) {
   struct zipruby_stat *p_stat;
 
