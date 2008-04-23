@@ -1,8 +1,8 @@
 #ifndef __ZIPRUBY_FILE_H__
 #define __ZIPRUBY_FILE_H__
 
-#include "ruby.h"
 #include "zip.h"
+#include "ruby.h"
 
 struct zipruby_file {
   VALUE v_archive;

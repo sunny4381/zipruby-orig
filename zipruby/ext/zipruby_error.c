@@ -1,6 +1,6 @@
-#include "ruby.h"
 #include "zipruby.h"
 #include "zipruby_error.h"
+#include "ruby.h"
 
 extern VALUE Zip;
 VALUE Error;

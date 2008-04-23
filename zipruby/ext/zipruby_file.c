@@ -6,12 +6,12 @@
 #include <malloc.h>
 #endif
 
-#include "ruby.h"
 #include "zip.h"
 #include "zipruby.h"
 #include "zipruby_archive.h"
 #include "zipruby_file.h"
 #include "zipruby_stat.h"
+#include "ruby.h"
 
 static VALUE zipruby_file(VALUE klass);
 static VALUE zipruby_file_alloc(VALUE klass);

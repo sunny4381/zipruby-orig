@@ -1,8 +1,8 @@
-#include "ruby.h"
-#include "rubyio.h"
 #include "zip.h"
 #include "zipruby.h"
 #include "zipruby_archive.h"
+#include "ruby.h"
+#include "rubyio.h"
 
 static VALUE zipruby_archive_alloc(VALUE klass);
 static void zipruby_archive_free(struct zipruby_archive *p);
