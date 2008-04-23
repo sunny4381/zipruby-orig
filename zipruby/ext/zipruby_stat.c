@@ -111,7 +111,7 @@ static VALUE zipruby_stat_crc(VALUE self) {
 
   Data_Get_Struct(self, struct zipruby_stat, p_stat);
 
-  return INT2NUM(p_stat->sb->crc);
+  return UINT2NUM(p_stat->sb->crc);
 }
 
 static VALUE zipruby_stat_size(VALUE self) {
@@ -119,7 +119,7 @@ static VALUE zipruby_stat_size(VALUE self) {
 
   Data_Get_Struct(self, struct zipruby_stat, p_stat);
 
-  return LONG2NUM(p_stat->sb->size);
+  return UINT2NUM(p_stat->sb->size);
 }
 
 static VALUE zipruby_stat_mtime(VALUE self) {
@@ -135,7 +135,7 @@ static VALUE zipruby_stat_comp_size(VALUE self) {
 
   Data_Get_Struct(self, struct zipruby_stat, p_stat);
 
-  return LONG2NUM(p_stat->sb->comp_size);
+  return UINT2NUM(p_stat->sb->comp_size);
 }
 
 static VALUE zipruby_stat_comp_method(VALUE self) {
