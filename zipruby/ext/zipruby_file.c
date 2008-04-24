@@ -124,7 +124,7 @@ static VALUE zipruby_file_initialize(int argc, VALUE *argv, VALUE self) {
     fzip = zip_fopen_index(p_archive->archive, i_index, i_flags);
 
     if (fzip == NULL) {
-      rb_raise(Error, "Open file failed at %d", i_index, zip_strerror(p_archive->archive));
+      rb_raise(Error, "Open file failed at %d: %s", i_index, zip_strerror(p_archive->archive));
     }
   }
 
