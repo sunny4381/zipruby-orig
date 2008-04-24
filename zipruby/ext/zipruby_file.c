@@ -149,8 +149,8 @@ static VALUE zipruby_file_close(VALUE self) {
 
   if ((error = zip_fclose(p_file->file)) != 0) {
     char errstr[ERRSTR_BUFSIZE];
-    zip_error_to_str(errstr, ERRSTR_BUFSIZE, error, errno);
     zip_unchange(p_file->archive, p_file->sb->index);
+    zip_error_to_str(errstr, ERRSTR_BUFSIZE, error, errno);
     rb_raise(Error, "Close file failed: %s", errstr);
   }
 
