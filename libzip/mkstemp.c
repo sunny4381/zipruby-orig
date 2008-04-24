@@ -46,7 +46,7 @@
 #ifdef _WIN32
 #include <io.h>
 #include <process.h>
-#define getpid _getpid
+#define getpid() _getpid()
 typedef int pid_t;
 #define S_ISDIR(m) (((m) & (_S_IFMT)) == (_S_IFDIR))
 #define open(p, f, m) _open((p), ((f) | _O_BINARY), _S_IREAD | _S_IWRITE)
