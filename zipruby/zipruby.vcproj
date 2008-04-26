@@ -172,6 +172,10 @@
 			>
 		</File>
 		<File
+			RelativePath=".\README.txt"
+			>
+		</File>
+		<File
 			RelativePath=".\zipruby-mswin32.gemspec"
 			>
 		</File>
