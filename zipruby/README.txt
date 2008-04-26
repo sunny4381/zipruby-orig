@@ -62,6 +62,20 @@ https://rubyforge.org/frs/?group_id=6124
       # add file to zip archive from buffer
       ar.add_buffer('zoo.txt', 'Hello, world!')
     end
+    
+    # include directory in zip archive
+    Zip::Archive.open('filename.zip') do |ar|
+      ar.add_file('dirname/foo.txt', 'foo.txt')
+          # args: <entry name>,      <source>
+    
+      open('bar.txt') do |f|
+        ar.add_filep('dirname/bar.txt', f)
+             # args: <entry name>,      <source>
+      end
+    
+      ar.add_buffer('dirname/zoo.txt', 'Hello, world!')
+            # args: <entry name>,      <source>
+    end
 
 === modifying zip archives
 
@@ -81,6 +95,15 @@ https://rubyforge.org/frs/?group_id=6124
 
       # add or replace file in zip archive
       ar.add_or_replace_file(3, 'foo.txt')
+    end
+    
+    # append comment    
+    Zip::Archive.open('filename.zip') do |ar|
+      ar.comment = <<-EOS
+        jugem jugem gokou no surikere
+        kaijari suigyo no
+        suigyoumatsu unraimatsu furaimatsu
+      EOS
     end
     
     # ar1 imports ar2 entries
