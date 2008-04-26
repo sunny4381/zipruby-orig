@@ -21,7 +21,7 @@ gem install zipruby
 https://rubyforge.org/frs/?group_id=6124
 
 == Example
-=== reading zip archives.
+=== reading zip archives
 
     require 'zipruby'
     
@@ -47,7 +47,7 @@ https://rubyforge.org/frs/?group_id=6124
       end
     end
 
-=== creating zip archives.
+=== creating zip archives
 
     require 'zipruby'
     
@@ -63,7 +63,7 @@ https://rubyforge.org/frs/?group_id=6124
       ar.add_buffer('zoo.txt', 'Hello, world!')
     end
 
-=== modifying zip archives.
+=== modifying zip archives
 
     require 'zipruby'
     
