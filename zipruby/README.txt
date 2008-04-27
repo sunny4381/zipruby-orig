@@ -43,7 +43,7 @@ https://rubyforge.org/frs/?group_id=6124
     
       # Zip::Archive includes Enumerable
       entry_names = ar.map do |f|
-        f.naem
+        f.name
       end
     end
 
