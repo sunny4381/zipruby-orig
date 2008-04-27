@@ -1,3 +1,8 @@
+/*
+ zip_crypt.c -- zip encryption support
+ Copyright (c) 2008 SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
+ based on zip_close.c
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,16 +19,16 @@
 #include "zip.h"
 #include "zipint.h"
 
-#include "crc32.h"
+#include "pkware_crc32.h"
 
 #define CRYPT_READ_AHEAD_LEN 12
 
 static void update_keys(unsigned long *keys, char c) {
-  keys[0] = CRC32(keys[0], c);
+  keys[0] = pkware_crc32(keys[0], c);
   keys[1] += keys[0] & 0xff;
   keys[1] = keys[1] * 134775813L + 1;
   c = (char) (keys[1] >> 24);
-  keys[2] = CRC32(keys[2], c);
+  keys[2] = pkware_crc32(keys[2], c);
 }
 
 static int decrypt_byte(unsigned long *keys) {

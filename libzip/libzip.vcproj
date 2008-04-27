@@ -87,19 +87,19 @@
 	</References>
 	<Files>
 		<File
-			RelativePath=".\crc32.c"
-			>
-		</File>
-		<File
-			RelativePath=".\crc32.h"
-			>
-		</File>
-		<File
 			RelativePath=".\libzip.mswin32.patch"
 			>
 		</File>
 		<File
 			RelativePath=".\mkstemp.c"
+			>
+		</File>
+		<File
+			RelativePath=".\pkware_crc32.c"
+			>
+		</File>
+		<File
+			RelativePath=".\pkware_crc32.h"
 			>
 		</File>
 		<File
