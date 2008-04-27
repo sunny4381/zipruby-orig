@@ -58,10 +58,12 @@ static int add_data_comp(zip_source_callback, void *, struct zip_stat *,
 static int add_data_uncomp(zip_source_callback, void *, struct zip_stat *,
 			   FILE *, struct zip_error *);
 static void ch_set_error(struct zip_error *, zip_source_callback, void *);
-static int copy_data(FILE *, off_t, FILE *, struct zip_error *);
-static int _zip_cdir_set_comment(struct zip_cdir *, struct zip *);
+// modified for Zip/Ruby by SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
+//static int copy_data(FILE *, off_t, FILE *, struct zip_error *);
+//static int _zip_cdir_set_comment(struct zip_cdir *, struct zip *);
 static int _zip_changed(struct zip *, int *);
-static char *_zip_create_temp_output(struct zip *, FILE **);
+// modified for Zip/Ruby by SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
+//static char *_zip_create_temp_output(struct zip *, FILE **);
 
 
 
@@ -451,7 +453,8 @@ ch_set_error(struct zip_error *error, zip_source_callback cb, void *ud)
 
 
 
-static int
+// modified for Zip/Ruby by SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
+/*static*/ int
 copy_data(FILE *fs, off_t len, FILE *ft, struct zip_error *error)
 {
     char buf[BUFSIZE];
@@ -484,7 +487,8 @@ copy_data(FILE *fs, off_t len, FILE *ft, struct zip_error *error)
 
 
 
-static int
+// modified for Zip/Ruby by SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
+/*static*/ int
 _zip_cdir_set_comment(struct zip_cdir *dest, struct zip *src)
 {
     if (src->ch_comment_len != -1) {
@@ -533,7 +537,8 @@ _zip_changed(struct zip *za, int *survivorsp)
 
 
 
-static char *
+// modified for Zip/Ruby by SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
+/*static*/ char *
 _zip_create_temp_output(struct zip *za, FILE **outp)
 {
     char *temp;

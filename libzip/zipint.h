@@ -237,4 +237,9 @@ int _zip_set_name(struct zip *, int, const char *);
 int _zip_unchange(struct zip *, int, int);
 void _zip_unchange_data(struct zip_entry *);
 
+// modified for Zip/Ruby by SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
+int copy_data(FILE *fs, off_t len, FILE *ft, struct zip_error *error);
+int _zip_cdir_set_comment(struct zip_cdir *, struct zip *);
+char *_zip_create_temp_output(struct zip *, FILE **);
+
 #endif /* zipint.h */

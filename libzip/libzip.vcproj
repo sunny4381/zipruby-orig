@@ -87,6 +87,14 @@
 	</References>
 	<Files>
 		<File
+			RelativePath=".\crc32.c"
+			>
+		</File>
+		<File
+			RelativePath=".\crc32.h"
+			>
+		</File>
+		<File
 			RelativePath=".\libzip.mswin32.patch"
 			>
 		</File>
@@ -108,6 +116,10 @@
 		</File>
 		<File
 			RelativePath=".\zip_close.c"
+			>
+		</File>
+		<File
+			RelativePath=".\zip_crypt.c"
 			>
 		</File>
 		<File
