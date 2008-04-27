@@ -97,7 +97,7 @@ https://rubyforge.org/frs/?group_id=6124
       ar.add_or_replace_file(3, 'foo.txt')
     end
     
-    # appends comment    
+    # append comment    
     Zip::Archive.open('filename.zip') do |ar|
       ar.comment = <<-EOS
         jugem jugem gokou no surikere
@@ -106,7 +106,7 @@ https://rubyforge.org/frs/?group_id=6124
       EOS
     end
     
-    # ar1 imports ar2 entries
+    # ar1 import ar2 entries
     Zip::Archive.open('ar1.zip') do |ar1|
       Zip::Archive.open('ar2.zip') do |ar2|
         ar1.update(ar2)
