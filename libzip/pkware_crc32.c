@@ -1,5 +1,5 @@
 /*
- pkware_crc32.c -- create pkware crc32 table
+ pkware_crc32.c -- make pkware crc32 table
  Copyright (c) 2008 SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
  see http://php.benscom.com/manual/ja/function.crc32.php#31832
 */
