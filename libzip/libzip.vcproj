@@ -95,14 +95,6 @@
 			>
 		</File>
 		<File
-			RelativePath=".\pkware_crc32.c"
-			>
-		</File>
-		<File
-			RelativePath=".\pkware_crc32.h"
-			>
-		</File>
-		<File
 			RelativePath=".\zip.h"
 			>
 		</File>

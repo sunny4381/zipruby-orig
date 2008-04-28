@@ -19,19 +19,21 @@
 #include "zip.h"
 #include "zipint.h"
 
-#include "pkware_crc32.h"
+#define ZIPENC_HEAD_LEN 12
 
-#define CRYPT_READ_AHEAD_LEN 12
+static zipenc_crc32(uLong crc, char c) {
+  return crc32(crc ^ 0xffffffffL, &c, 1) ^ 0xffffffffL;
+}
 
-static void update_keys(unsigned long *keys, char c) {
-  keys[0] = pkware_crc32(keys[0], c);
+static void update_keys(uLong *keys, char c) {
+  keys[0] = zipenc_crc32(keys[0], c);
   keys[1] += keys[0] & 0xff;
   keys[1] = keys[1] * 134775813L + 1;
   c = (char) (keys[1] >> 24);
-  keys[2] = pkware_crc32(keys[2], c);
+  keys[2] = zipenc_crc32(keys[2], c);
 }
 
-static int decrypt_byte(unsigned long *keys) {
+static int decrypt_byte(uLong *keys) {
   unsigned temp;
 
   temp = (unsigned) (keys[2] | 2);
@@ -53,7 +55,7 @@ static void init_keys(unsigned long *keys, const char *password, size_t len) {
 static void decrypt_header(unsigned long *keys, char *buffer) {
   int i;
 
-  for (i = 0; i < CRYPT_READ_AHEAD_LEN; i++) {
+  for (i = 0; i < ZIPENC_HEAD_LEN; i++) {
     char c = buffer[i] ^ decrypt_byte(keys);
     update_keys(keys, c);
     buffer[i] = c;
@@ -81,7 +83,7 @@ static int copy_decrypt(FILE *src, off_t len, const char *password, int passwdle
 
   init_keys(keys, password, passwdlen);
 
-  if (fread(buf, 1, CRYPT_READ_AHEAD_LEN, src) < 0) {
+  if (fread(buf, 1, ZIPENC_HEAD_LEN, src) < 0) {
     _zip_error_set(error, ZIP_ER_READ, errno);
   }
 
@@ -179,9 +181,9 @@ static int _zip_crypt(struct zip *za, const char *password, int passwdlen, int d
     encrypted = (de.bitflags & ZIP_GPBF_ENCRYPTED);
 
     if (decrypt && encrypted) {
-      de.comp_size -= CRYPT_READ_AHEAD_LEN;
+      de.comp_size -= ZIPENC_HEAD_LEN;
       de.bitflags &= ~ZIP_GPBF_ENCRYPTED;
-      cd->entry[j].comp_size -= CRYPT_READ_AHEAD_LEN;
+      cd->entry[j].comp_size -= ZIPENC_HEAD_LEN;
       cd->entry[j].bitflags &= ~ZIP_GPBF_ENCRYPTED;
     } else if (!decrypt && !encrypted) {
       // XXX
