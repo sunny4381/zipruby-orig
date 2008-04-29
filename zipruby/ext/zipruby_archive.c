@@ -10,6 +10,7 @@ static VALUE zipruby_archive_alloc(VALUE klass);
 static void zipruby_archive_free(struct zipruby_archive *p);
 static VALUE zipruby_archive_s_open(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_s_decrypt(VALUE self, VALUE path, VALUE password);
+static VALUE zipruby_archive_s_encrypt(VALUE self, VALUE path, VALUE password);
 static VALUE zipruby_archive_close(VALUE self);
 static VALUE zipruby_archive_num_files(VALUE self);
 static VALUE zipruby_archive_get_name(int argc, VALUE *argv, VALUE self);
@@ -50,6 +51,7 @@ void Init_zipruby_archive() {
   rb_include_module(Archive, rb_mEnumerable);
   rb_define_singleton_method(Archive, "open", zipruby_archive_s_open, -1);
   rb_define_singleton_method(Archive, "decrypt", zipruby_archive_s_decrypt, 2);
+  rb_define_singleton_method(Archive, "encrypt", zipruby_archive_s_encrypt, 2);
   rb_define_method(Archive, "close", zipruby_archive_close, 0);
   rb_define_method(Archive, "num_files", zipruby_archive_num_files, 0);
   rb_define_method(Archive, "get_name", zipruby_archive_get_name, -1);
@@ -158,6 +160,30 @@ static VALUE zipruby_archive_s_decrypt(VALUE self, VALUE path, VALUE password) {
       zip_error_to_str(errstr, ERRSTR_BUFSIZE, errorp, errno);
       rb_raise(Error, "Decrypt archive failed - %s: %s", StringValuePtr(path), errstr);
     }
+  }
+
+  return Qnil;
+}
+
+/* */
+static VALUE zipruby_archive_s_encrypt(VALUE self, VALUE path, VALUE password) {
+  int errorp;
+  long pwdlen;
+
+  Check_Type(path, T_STRING);
+  Check_Type(password, T_STRING);
+  pwdlen = RSTRING(password)->len;
+
+  if (pwdlen < 1) {
+    rb_raise(Error, "Encrypt archive failed - %s: Password is empty", StringValuePtr(path));
+  } else if (pwdlen > 0xff) {
+    rb_raise(Error, "Encrypt archive failed - %s: Password is too long", StringValuePtr(path));
+  }
+
+  if (zip_encrypt(StringValuePtr(path), StringValuePtr(password), pwdlen, &errorp) == -1) {
+    char errstr[ERRSTR_BUFSIZE];
+    zip_error_to_str(errstr, ERRSTR_BUFSIZE, errorp, errno);
+    rb_raise(Error, "Encrypt archive failed - %s: %s", StringValuePtr(path), errstr);
   }
 
   return Qnil;
