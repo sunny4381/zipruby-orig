@@ -188,8 +188,12 @@ static int _zip_crypt(struct zip *za, const char *pwd, int pwdlen, int decrypt, 
     }
 
     memcpy(cd->entry + i, za->cdir->entry + i, sizeof(cd->entry[i]));
-    cd->entry[i].offset = ftello(out);
 
+    if (cd->entry[i].bitflags & ZIP_GPBF_DATA_DESCRIPTOR) {
+      cd->entry[i].bitflags &= ~ZIP_GPBF_DATA_DESCRIPTOR;
+    }
+
+    cd->entry[i].offset = ftello(out);
     encrypted = de.bitflags & ZIP_GPBF_ENCRYPTED;
 
     if (decrypt && encrypted) {
