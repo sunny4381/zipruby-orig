@@ -287,7 +287,11 @@ static VALUE zipruby_archive_replace_buffer(VALUE self, VALUE index, VALUE sourc
   Check_Archive(p_archive);
 
   len = RSTRING(source)->len;
-  data = malloc(len);
+
+  if ((data = malloc(len)) == NULL) {
+    rb_raise(rb_eRuntimeError, "Replace file failed: Cannot allocate memory");
+  }
+
   memcpy(data, StringValuePtr(source), len);
 
   if ((zsource = zip_source_buffer(p_archive->archive, data, len, 1)) == NULL) {
