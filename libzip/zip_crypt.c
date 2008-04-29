@@ -53,13 +53,23 @@ static void init_keys(uLong *keys, const char *password, size_t len) {
   }
 }
 
-static void decrypt_header(unsigned long *keys, char *buffer) {
+static int decrypt_header(unsigned long *keys, char *buffer, struct zip_dirent *de) {
   int i;
+  char c;
+  unsigned short dostime, dosdate;
 
   for (i = 0; i < ZIPENC_HEAD_LEN; i++) {
-    char c = buffer[i] ^ decrypt_byte(keys);
+    c = buffer[i] ^ decrypt_byte(keys);
     update_keys(keys, c);
     buffer[i] = c;
+  }
+
+  _zip_u2d_time(de->last_mod, &dostime, &dosdate);
+
+  if (de->bitflags & ZIP_GPBF_DATA_DESCRIPTOR) {
+    return ((c & 0xff) == (de->crc >> 24)) ? 0 : -1;
+  } else {
+    return ((c & 0xff) == (dostime >> 8)) ? 0 : -1;
   }
 }
 
@@ -73,11 +83,13 @@ static void decrypt_data(uLong *keys, char *buffer, size_t n) {
   }
 }
 
-static int copy_decrypt(FILE *src, off_t len, const char *pwd, int pwdlen, FILE *dest, struct zip_error *error) {
+static int copy_decrypt(FILE *src, off_t len, const char *pwd, int pwdlen, struct zip_dirent *de, FILE *dest, struct zip_error *error, int *wrongpwd) {
   char buf[BUFSIZE];
   uLong keys[3];
   int n;
-  
+
+  *wrongpwd = 0;
+
   if (len == 0) {
     return 0;
   }
@@ -88,7 +100,11 @@ static int copy_decrypt(FILE *src, off_t len, const char *pwd, int pwdlen, FILE 
     _zip_error_set(error, ZIP_ER_READ, errno);
   }
 
-  decrypt_header(keys, buf);
+  if (decrypt_header(keys, buf, de) == -1) {
+    // XXX: _zip_error_set
+    *wrongpwd = 1;
+    return -1;
+  }
 
   while (len > 0) {
     if ((n = fread(buf, 1, MIN(len,  sizeof(buf)), src)) < 0) {
@@ -112,7 +128,7 @@ static int copy_decrypt(FILE *src, off_t len, const char *pwd, int pwdlen, FILE 
   return 0;
 }
 
-static int _zip_crypt(struct zip *za, const char *pwd, int pwdlen, int decrypt) {
+static int _zip_crypt(struct zip *za, const char *pwd, int pwdlen, int decrypt, int *wrongpwd) {
   int i, error = 0;
   char *temp;
   FILE *out;
@@ -191,7 +207,7 @@ static int _zip_crypt(struct zip *za, const char *pwd, int pwdlen, int decrypt) 
     }
 
     if (decrypt && encrypted) {
-      error = (copy_decrypt(za->zp, cd->entry[i].comp_size, pwd, pwdlen, out, &za->error) < 0);
+      error = (copy_decrypt(za->zp, cd->entry[i].comp_size, pwd, pwdlen, &de, out, &za->error, wrongpwd) < 0);
     } else if (!decrypt && !encrypted) {
       // XXX
       error = (copy_data(za->zp, cd->entry[i].comp_size, out, &za->error) < 0);
@@ -256,15 +272,19 @@ static int _zip_crypt(struct zip *za, const char *pwd, int pwdlen, int decrypt) 
   return 0;
 }
 
-int zip_decrypt(const char *path, const char *pwd, int pwdlen, int *errorp) {
+int zip_decrypt(const char *path, const char *pwd, int pwdlen, int *errorp, int *wrongpwd) {
   struct zip *za;
   int res;
+
+  if (pwd == NULL || pwdlen < 1) {
+    return -1;
+  }
 
   if ((za = zip_open(path, 0, errorp)) == NULL) {
     return -1;
   }
 
-  res = _zip_crypt(za, pwd, pwdlen, 1);
+  res = _zip_crypt(za, pwd, pwdlen, 1, wrongpwd);
   _zip_free(za);
 
   return res;

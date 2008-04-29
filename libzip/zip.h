@@ -205,7 +205,7 @@ int zip_unchange_all(struct zip *);
 int zip_unchange_archive(struct zip *);
 
 // modified for Zip/Ruby by SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
-int zip_decrypt(const char *path, const char *pwd, int pwdlen, int *errorp);
+int zip_decrypt(const char *path, const char *pwd, int pwdlen, int *errorp, int *wrongpwd);
 
 #ifdef __cplusplus
 }

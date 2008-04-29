@@ -126,6 +126,12 @@ https://rubyforge.org/frs/?group_id=6124
       end
     end
 
+=== decrypt zip archives
+
+    require 'zipruby'
+    
+    Zip::Archive.decrypt('filename.zip', 'password')
+
 == License
     Copyright (c) 2008 SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
     All rights reserved.

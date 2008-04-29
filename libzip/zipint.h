@@ -241,5 +241,6 @@ void _zip_unchange_data(struct zip_entry *);
 int copy_data(FILE *fs, off_t len, FILE *ft, struct zip_error *error);
 int _zip_cdir_set_comment(struct zip_cdir *, struct zip *);
 char *_zip_create_temp_output(struct zip *, FILE **);
+void _zip_u2d_time(time_t, unsigned short *, unsigned short *);
 
 #endif /* zipint.h */

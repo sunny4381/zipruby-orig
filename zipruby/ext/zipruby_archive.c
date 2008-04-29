@@ -137,15 +137,19 @@ static VALUE zipruby_archive_s_open(int argc, VALUE *argv, VALUE self) {
 
 /* */
 static VALUE zipruby_archive_s_decrypt(VALUE self, VALUE path, VALUE password) {
-  int errorp;
+  int errorp, wrongpwd;
 
   Check_Type(path, T_STRING);
   Check_Type(password, T_STRING);
 
-  if (zip_decrypt(StringValuePtr(path), StringValuePtr(password), RSTRING(password)->len, &errorp) == -1) {
-    char errstr[ERRSTR_BUFSIZE];
-    zip_error_to_str(errstr, ERRSTR_BUFSIZE, errorp, errno);
-    rb_raise(Error, "Crypt archive failed - %s: %s", StringValuePtr(path), errstr);
+  if (zip_decrypt(StringValuePtr(path), StringValuePtr(password), RSTRING(password)->len, &errorp, &wrongpwd) == -1) {
+    if (wrongpwd) {
+      rb_raise(Error, "Decrypt archive failed - %s: Wrong password", StringValuePtr(path));
+    } else {
+      char errstr[ERRSTR_BUFSIZE];
+      zip_error_to_str(errstr, ERRSTR_BUFSIZE, errorp, errno);
+      rb_raise(Error, "Decrypt archive failed - %s: %s", StringValuePtr(path), errstr);
+    }
   }
 
   return Qnil;
