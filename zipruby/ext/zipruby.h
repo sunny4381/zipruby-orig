@@ -1,7 +1,7 @@
 #ifndef __ZIPRUBY_H__
 #define __ZIPRUBY_H__
 
-#define VERSION "0.2.1"
+#define VERSION "0.2.2"
 #define ERRSTR_BUFSIZE 256
 #define DATA_BUFSIZE 8192
 

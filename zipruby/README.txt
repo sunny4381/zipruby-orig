@@ -21,7 +21,7 @@ gem install zipruby
 https://rubyforge.org/frs/?group_id=6124
 
 == Example
-=== reading zip archives
+=== reading zip archive
 
     require 'zipruby'
     
@@ -64,7 +64,7 @@ https://rubyforge.org/frs/?group_id=6124
       end
     end
 
-=== creating zip archives
+=== creating zip archive
 
     require 'zipruby'
     
@@ -94,7 +94,7 @@ https://rubyforge.org/frs/?group_id=6124
             # args: <entry name>,      <source>
     end
 
-=== modifying zip archives
+=== modifying zip archive
 
     require 'zipruby'
     
@@ -130,10 +130,14 @@ https://rubyforge.org/frs/?group_id=6124
       end
     end
 
-=== decrypt zip archives
+=== encrypt/decrypt zip archive
 
     require 'zipruby'
     
+    # encrypt
+    Zip::Archive.encrypt('filename.zip', 'password')
+    
+    # decrypt
     Zip::Archive.decrypt('filename.zip', 'password')
 
 == License
