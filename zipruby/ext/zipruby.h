@@ -3,6 +3,7 @@
 
 #define VERSION "0.2.0"
 #define ERRSTR_BUFSIZE 256
+#define DATA_BUFSIZE 8192
 
 void Init_zipruby();
 

@@ -13,6 +13,8 @@
 #include "zipruby_stat.h"
 #include "ruby.h"
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
 static VALUE zipruby_file(VALUE klass);
 static VALUE zipruby_file_alloc(VALUE klass);
 static void zipruby_file_mark(struct zipruby_file *p);
@@ -163,14 +165,15 @@ static VALUE zipruby_file_close(VALUE self) {
 
 /* */
 static VALUE zipruby_file_read(int argc, VALUE *argv, VALUE self) {
-  VALUE v_size, retval;
+  VALUE size, retval = Qnil;
   struct zipruby_file *p_file;
   struct zip_stat sb;
-  size_t size;
-  char *buf;
+  int block_given;
+  size_t bytes_left;
+  char buf[DATA_BUFSIZE];
   ssize_t n;
 
-  rb_scan_args(argc, argv, "01", &v_size);
+  rb_scan_args(argc, argv, "01", &size);
   Data_Get_Struct(self, struct zipruby_file, p_file);
   Check_File(p_file);
   zip_stat_init(&sb);
@@ -179,27 +182,35 @@ static VALUE zipruby_file_read(int argc, VALUE *argv, VALUE self) {
     rb_raise(Error, "Read file failed: %s", zip_strerror(p_file->archive));
   }
 
-  if (NIL_P(v_size)) {
-    size = sb.size;
+  if (NIL_P(size)) {
+    bytes_left = sb.size;
   } else {
-    size = NUM2LONG(v_size);
+    bytes_left = NUM2LONG(size);
   }
 
-  if (size <= 0) {
+  if (bytes_left <= 0) {
     return Qnil;
   }
 
-  if ((buf = malloc(size)) == NULL) {
-    rb_raise(rb_eRuntimeError, "Read file failed: Cannot allocate memory");
+  block_given = rb_block_given_p();
+
+  while ((n = zip_fread(p_file->file, buf, MIN(bytes_left, sizeof(buf)))) > 0) {
+    if (block_given) {
+      rb_yield(rb_str_new(buf, n));
+    } else {
+      if (NIL_P(retval)) {
+        retval = rb_str_new(buf, n);
+      } else {
+        rb_str_buf_cat(retval, buf, n);
+      }
+    }
+
+    bytes_left -= n;
   }
 
-  if ((n = zip_fread(p_file->file, buf, size)) == -1) {
-    free(buf);
+  if (n == -1) {
     rb_raise(Error, "Read file failed: %s", zip_file_strerror(p_file->file));
   }
-
-  retval = (n > 0) ? rb_str_new(buf, n) : Qnil;
-  free(buf);
 
   return retval;
 }

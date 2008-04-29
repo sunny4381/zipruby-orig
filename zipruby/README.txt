@@ -57,6 +57,10 @@ https://rubyforge.org/frs/?group_id=6124
         while chunk = f.read(BUFSIZE)
           buf << chunk
         end
+        # or
+        # f.read do |chunk|
+        #   buf << chunk
+        # end
       end
     end
 
