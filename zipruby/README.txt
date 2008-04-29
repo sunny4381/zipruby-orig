@@ -46,6 +46,19 @@ https://rubyforge.org/frs/?group_id=6124
         f.name
       end
     end
+    
+    # read huge entry
+    BUFSIZE = 8192
+    
+    Zip::Archive.open('filename.zip') do |ar|
+      ar.each do |f|
+        buf = ''
+    
+        while chunk = f.read(BUFSIZE)
+          buf << chunk
+        end
+      end
+    end
 
 === creating zip archives
 
