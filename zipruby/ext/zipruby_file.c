@@ -19,7 +19,7 @@ static void zipruby_file_mark(struct zipruby_file *p);
 static void zipruby_file_free(struct zipruby_file *p);
 static VALUE zipruby_file_initialize(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_file_close(VALUE self);
-static VALUE zipruby_file_read(VALUE self);
+static VALUE zipruby_file_read(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_file_stat(VALUE self);
 static VALUE zipruby_file_get_comment(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_file_set_comment(VALUE self, VALUE comment);
@@ -46,7 +46,7 @@ void Init_zipruby_file() {
   rb_define_alloc_func(File, zipruby_file_alloc);
   rb_define_method(File, "initialize", zipruby_file_initialize, -1);
   rb_define_method(File, "close", zipruby_file_close, 0);
-  rb_define_method(File, "read", zipruby_file_read, 0);
+  rb_define_method(File, "read", zipruby_file_read, -1);
   rb_define_method(File, "stat", zipruby_file_stat, 0);
   rb_define_method(File, "get_comment", zipruby_file_get_comment, -1);
   rb_define_method(File, "comment", zipruby_file_get_comment, -1);
@@ -162,27 +162,46 @@ static VALUE zipruby_file_close(VALUE self) {
 }
 
 /* */
-static VALUE zipruby_file_read(VALUE self) {
+static VALUE zipruby_file_read(int argc, VALUE *argv, VALUE self) {
+  VALUE v_size, retval;
   struct zipruby_file *p_file;
   struct zip_stat sb;
+  size_t size;
   char *buf;
+  ssize_t n;
 
+  rb_scan_args(argc, argv, "01", &v_size);
   Data_Get_Struct(self, struct zipruby_file, p_file);
   Check_File(p_file);
-
   zip_stat_init(&sb);
 
   if (zip_stat_index(p_file->archive, p_file->sb->index, 0, &sb)) {
     rb_raise(Error, "Read file failed: %s", zip_strerror(p_file->archive));
   }
 
-  buf = alloca(sb.size);
-  
-  if (zip_fread(p_file->file, buf, sb.size) == -1) {
+  if (NIL_P(v_size)) {
+    size = sb.size;
+  } else {
+    size = NUM2LONG(v_size);
+  }
+
+  if (size <= 0) {
+    return Qnil;
+  }
+
+  if ((buf = malloc(size)) == NULL) {
+    rb_raise(rb_eRuntimeError, "Read file failed: Cannot allocate memory");
+  }
+
+  if ((n = zip_fread(p_file->file, buf, size)) == -1) {
+    free(buf);
     rb_raise(Error, "Read file failed: %s", zip_file_strerror(p_file->file));
   }
 
-  return rb_str_new(buf, sb.size);
+  retval = (n > 0) ? rb_str_new(buf, n) : Qnil;
+  free(buf);
+
+  return retval;
 }
 
 /* */
