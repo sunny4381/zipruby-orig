@@ -56,7 +56,6 @@ static void init_keys(uLong *keys, const char *password, size_t len) {
 static int decrypt_header(unsigned long *keys, char *buffer, struct zip_dirent *de) {
   int i;
   char c;
-  unsigned short dostime, dosdate;
 
   for (i = 0; i < ZIPENC_HEAD_LEN; i++) {
     c = buffer[i] ^ decrypt_byte(keys);
@@ -64,11 +63,11 @@ static int decrypt_header(unsigned long *keys, char *buffer, struct zip_dirent *
     buffer[i] = c;
   }
 
-  _zip_u2d_time(de->last_mod, &dostime, &dosdate);
-
   if (de->bitflags & ZIP_GPBF_DATA_DESCRIPTOR) {
     return ((c & 0xff) == (de->crc >> 24)) ? 0 : -1;
   } else {
+    unsigned short dostime, dosdate;
+    _zip_u2d_time(de->last_mod, &dostime, &dosdate);
     return ((c & 0xff) == (dostime >> 8)) ? 0 : -1;
   }
 }
