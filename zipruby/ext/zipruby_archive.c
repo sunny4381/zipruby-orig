@@ -138,11 +138,19 @@ static VALUE zipruby_archive_s_open(int argc, VALUE *argv, VALUE self) {
 /* */
 static VALUE zipruby_archive_s_decrypt(VALUE self, VALUE path, VALUE password) {
   int errorp, wrongpwd;
+  long pwdlen;
 
   Check_Type(path, T_STRING);
   Check_Type(password, T_STRING);
+  pwdlen = RSTRING(password)->len;
 
-  if (zip_decrypt(StringValuePtr(path), StringValuePtr(password), RSTRING(password)->len, &errorp, &wrongpwd) == -1) {
+  if (pwdlen < 1) {
+    rb_raise(Error, "Decrypt archive failed - %s: Password is empty", StringValuePtr(path));
+  } else if (pwdlen > 0xff) {
+    rb_raise(Error, "Decrypt archive failed - %s: Password is too long", StringValuePtr(path));
+  }
+
+  if (zip_decrypt(StringValuePtr(path), StringValuePtr(password), pwdlen, &errorp, &wrongpwd) == -1) {
     if (wrongpwd) {
       rb_raise(Error, "Decrypt archive failed - %s: Wrong password", StringValuePtr(path));
     } else {
