@@ -257,7 +257,9 @@ static int _zip_crypt(struct zip *za, const char *pwd, int pwdlen, int decrypt, 
   }
 
   for (i = 0; i < za->nentry; i++) {
+    struct zip_dirent fde;
     int encrypted;
+    unsigned int comp_size;
 
     if (fseeko(za->zp, za->cdir->entry[i].offset, SEEK_SET) != 0) {
       _zip_error_set(&za->error, ZIP_ER_SEEK, errno);
@@ -270,6 +272,9 @@ static int _zip_crypt(struct zip *za, const char *pwd, int pwdlen, int decrypt, 
       break;
     }
 
+    memcpy(&fde, &de, sizeof(fde));
+    encrypted = de.bitflags & ZIP_GPBF_ENCRYPTED;
+
     if (de.bitflags & ZIP_GPBF_DATA_DESCRIPTOR) {
       de.crc = za->cdir->entry[i].crc;
       de.comp_size = za->cdir->entry[i].comp_size;
@@ -278,13 +283,13 @@ static int _zip_crypt(struct zip *za, const char *pwd, int pwdlen, int decrypt, 
     }
 
     memcpy(cd->entry + i, za->cdir->entry + i, sizeof(cd->entry[i]));
+    comp_size = cd->entry[i].comp_size;
 
     if (cd->entry[i].bitflags & ZIP_GPBF_DATA_DESCRIPTOR) {
       cd->entry[i].bitflags &= ~ZIP_GPBF_DATA_DESCRIPTOR;
     }
 
     cd->entry[i].offset = ftello(out);
-    encrypted = de.bitflags & ZIP_GPBF_ENCRYPTED;
 
     if (decrypt && encrypted) {
       de.comp_size -= ZIPENC_HEAD_LEN;
@@ -304,11 +309,11 @@ static int _zip_crypt(struct zip *za, const char *pwd, int pwdlen, int decrypt, 
     }
 
     if (decrypt && encrypted) {
-      error = (copy_decrypt(za->zp, cd->entry[i].comp_size, pwd, pwdlen, &de, out, &za->error, wrongpwd) < 0);
+      error = (copy_decrypt(za->zp, comp_size, pwd, pwdlen, &fde, out, &za->error, wrongpwd) < 0);
     } else if (!decrypt && !encrypted) {
-      error = (copy_encrypt(za->zp, (cd->entry[i].comp_size - ZIPENC_HEAD_LEN), pwd, pwdlen, &de, out, &za->error) < 0);
+      error = (copy_encrypt(za->zp, comp_size, pwd, pwdlen, &fde, out, &za->error) < 0);
     } else {
-      error = (copy_data(za->zp, cd->entry[i].comp_size, out, &za->error) < 0);
+      error = (copy_data(za->zp, comp_size, out, &za->error) < 0);
     }
 
     if (error) {
