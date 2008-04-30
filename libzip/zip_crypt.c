@@ -64,11 +64,11 @@ static int decrypt_header(unsigned long *keys, char *buffer, struct zip_dirent *
   }
 
   if (de->bitflags & ZIP_GPBF_DATA_DESCRIPTOR) {
-    return ((c & 0xff) == (de->crc >> 24)) ? 0 : -1;
-  } else {
     unsigned short dostime, dosdate;
     _zip_u2d_time(de->last_mod, &dostime, &dosdate);
     return ((c & 0xff) == (dostime >> 8)) ? 0 : -1;
+  } else {
+    return ((c & 0xff) == (de->crc >> 24)) ? 0 : -1;
   }
 }
 
