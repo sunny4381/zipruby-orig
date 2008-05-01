@@ -93,6 +93,16 @@ https://rubyforge.org/frs/?group_id=6124
       ar.add_buffer('dirname/zoo.txt', 'Hello, world!')
             # args: <entry name>,      <source>
     end
+    
+    # add huge file
+    source = %w(London Bridge is falling down)
+    
+    Zip::Archive.open('filename.zip') do |ar|
+      # lb.txt => 'LondonBridgeisfallingdown'
+      ar.add('lb.txt') do # add(<filename>, <mtime>)
+        source.shift # end of stream is nil
+      end
+    end
 
 === modifying zip archive
 
