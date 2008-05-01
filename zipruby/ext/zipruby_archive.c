@@ -28,6 +28,7 @@ static VALUE zipruby_archive_replace_function(int argc, VALUE *argv, VALUE self)
 static VALUE zipruby_archive_add_or_replace_buffer(VALUE self, VALUE name, VALUE source);
 static VALUE zipruby_archive_add_or_replace_file(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_add_or_replace_filep(int argc, VALUE *argv, VALUE self);
+static VALUE zipruby_archive_add_or_replace_function(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_update(VALUE self, VALUE srcarchive);
 static VALUE zipruby_archive_get_comment(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_set_comment(VALUE self, VALUE comment);
@@ -71,6 +72,7 @@ void Init_zipruby_archive() {
   rb_define_method(Archive, "add_or_replace_buffer", zipruby_archive_add_or_replace_buffer, 2);
   rb_define_method(Archive, "add_or_replace_file", zipruby_archive_add_or_replace_file, -1);
   rb_define_method(Archive, "add_or_replace_filep", zipruby_archive_add_or_replace_filep, -1);
+  rb_define_method(Archive, "add_or_replace", zipruby_archive_add_or_replace_function, -1);
   rb_define_method(Archive, "update", zipruby_archive_update, 1);
   rb_define_method(Archive, "<<", zipruby_archive_add_filep, -1);
   rb_define_method(Archive, "get_comment", zipruby_archive_get_comment, -1);
@@ -612,6 +614,27 @@ static VALUE zipruby_archive_replace_function(int argc, VALUE *argv, VALUE self)
   }
 
   return Qnil;
+}
+
+/* */
+static VALUE zipruby_archive_add_or_replace_function(int argc, VALUE *argv, VALUE self) {
+  VALUE name, mtime;
+  struct zipruby_archive *p_archive;
+  int index;
+
+  rb_scan_args(argc, argv, "11", &name, &mtime);
+  Check_Type(name, T_STRING);
+  Data_Get_Struct(self, struct zipruby_archive, p_archive);
+  Check_Archive(p_archive);
+
+  index = zip_name_locate(p_archive->archive, StringValuePtr(name), ZIP_FL_NOCASE);
+
+  if (index >= 0) {
+    VALUE args[] = { INT2NUM(index), mtime };
+    return zipruby_archive_replace_function(2, args, self);
+  } else {
+    return zipruby_archive_add_function(argc, argv, self);
+  }
 }
 
 /* */
