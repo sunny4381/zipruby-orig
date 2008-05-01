@@ -42,8 +42,7 @@ static ssize_t read_proc(void *state, void *data, size_t len, enum zip_source_cm
     {
       struct zip_stat *st = (struct zip_stat *)data;
       zip_stat_init(st);
-      // XXX: st->mtime = z->mtime
-      st->mtime = time(NULL);
+      st->mtime = NUM2LONG(rb_funcall(z->mtime, rb_intern("tv_sec"), 0));
       return sizeof(*st);
     }
 

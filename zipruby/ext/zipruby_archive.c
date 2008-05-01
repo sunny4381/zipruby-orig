@@ -20,7 +20,7 @@ static VALUE zipruby_archive_get_stat(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_add_buffer(VALUE self, VALUE name, VALUE source);
 static VALUE zipruby_archive_add_file(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_add_filep(int argc, VALUE *argv, VALUE self);
-static VALUE zipruby_archive_add_function(VALUE self, VALUE name);
+static VALUE zipruby_archive_add_function(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_replace_buffer(VALUE self, VALUE index, VALUE source);
 static VALUE zipruby_archive_replace_file(VALUE self, VALUE index, VALUE fname);
 static VALUE zipruby_archive_replace_filep(VALUE self, VALUE index, VALUE file);
@@ -62,7 +62,7 @@ void Init_zipruby_archive() {
   rb_define_method(Archive, "add_buffer", zipruby_archive_add_buffer, 2);
   rb_define_method(Archive, "add_file", zipruby_archive_add_file, -1);
   rb_define_method(Archive, "add_filep", zipruby_archive_add_filep, -1);
-  rb_define_method(Archive, "add", zipruby_archive_add_function, 1);
+  rb_define_method(Archive, "add", zipruby_archive_add_function, -1);
   rb_define_method(Archive, "replace_buffer", zipruby_archive_replace_buffer, 2);
   rb_define_method(Archive, "replace_file", zipruby_archive_replace_file, 2);
   rb_define_method(Archive, "replace_filep", zipruby_archive_replace_filep, 2);
@@ -526,12 +526,21 @@ static VALUE zipruby_archive_add_or_replace_filep(int argc, VALUE *argv, VALUE s
 }
 
 /* */
-static VALUE zipruby_archive_add_function(VALUE self, VALUE name) {
+static VALUE zipruby_archive_add_function(int argc, VALUE *argv, VALUE self) {
+  VALUE name, mtime;
   struct zipruby_archive *p_archive;
   struct zip_source *zsource;
   struct read_proc *z;
 
+  rb_scan_args(argc, argv, "11", &name, &mtime);
   rb_need_block();
+
+  if (NIL_P(mtime)) {
+    mtime = rb_funcall(rb_cTime, rb_intern("now"), 0);
+  } else if (!rb_obj_is_instance_of(mtime, rb_cTime)) {
+    rb_raise(rb_eTypeError, "wrong argument type %s (expected Time)", rb_class2name(CLASS_OF(mtime)));
+  }
+
   Data_Get_Struct(self, struct zipruby_archive, p_archive); 
   Check_Archive(p_archive);
 
@@ -542,10 +551,10 @@ static VALUE zipruby_archive_add_function(VALUE self, VALUE name) {
   }
 
   z->proc = rb_block_proc();
-  // XXX:
-  z->mtime = rb_funcall(rb_cTime, rb_intern("now"), 0);
+  z->mtime = mtime;
 
   if ((zsource = zip_source_proc(p_archive->archive, z)) == NULL) {
+    free(z);
     rb_raise(Error, "Add failed - %s: %s", StringValuePtr(name), zip_strerror(p_archive->archive));
   }
 
