@@ -3,6 +3,7 @@
 #include "zip.h"
 #include "zipruby.h"
 #include "zipruby_archive.h"
+#include "zipruby_zip_source_proc.h"
 #include "ruby.h"
 #include "rubyio.h"
 
@@ -19,6 +20,7 @@ static VALUE zipruby_archive_get_stat(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_add_buffer(VALUE self, VALUE name, VALUE source);
 static VALUE zipruby_archive_add_file(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_add_filep(int argc, VALUE *argv, VALUE self);
+static VALUE zipruby_archive_add_function(VALUE self, VALUE name);
 static VALUE zipruby_archive_replace_buffer(VALUE self, VALUE index, VALUE source);
 static VALUE zipruby_archive_replace_file(VALUE self, VALUE index, VALUE fname);
 static VALUE zipruby_archive_replace_filep(VALUE self, VALUE index, VALUE file);
@@ -60,6 +62,7 @@ void Init_zipruby_archive() {
   rb_define_method(Archive, "add_buffer", zipruby_archive_add_buffer, 2);
   rb_define_method(Archive, "add_file", zipruby_archive_add_file, -1);
   rb_define_method(Archive, "add_filep", zipruby_archive_add_filep, -1);
+  rb_define_method(Archive, "add", zipruby_archive_add_function, 1);
   rb_define_method(Archive, "replace_buffer", zipruby_archive_replace_buffer, 2);
   rb_define_method(Archive, "replace_file", zipruby_archive_replace_file, 2);
   rb_define_method(Archive, "replace_filep", zipruby_archive_replace_filep, 2);
@@ -520,6 +523,40 @@ static VALUE zipruby_archive_add_or_replace_filep(int argc, VALUE *argv, VALUE s
   } else {
     return zipruby_archive_add_filep(argc, argv, self);
   }
+}
+
+/* */
+static VALUE zipruby_archive_add_function(VALUE self, VALUE name) {
+  struct zipruby_archive *p_archive;
+  struct zip_source *zsource;
+  struct read_proc *z;
+
+  rb_need_block();
+  Data_Get_Struct(self, struct zipruby_archive, p_archive); 
+  Check_Archive(p_archive);
+
+  if ((z = malloc(sizeof(struct read_proc))) == NULL) {
+    zip_unchange_all(p_archive->archive);
+    zip_unchange_archive(p_archive->archive);
+    rb_raise(rb_eRuntimeError, "Add failed: Cannot allocate memory");
+  }
+
+  z->proc = rb_block_proc();
+  // XXX:
+  z->mtime = rb_funcall(rb_cTime, rb_intern("now"), 0);
+
+  if ((zsource = zip_source_proc(p_archive->archive, z)) == NULL) {
+    rb_raise(Error, "Add failed - %s: %s", StringValuePtr(name), zip_strerror(p_archive->archive));
+  }
+
+  if (zip_add(p_archive->archive, StringValuePtr(name), zsource) == -1) {
+    zip_source_free(zsource);
+    zip_unchange_all(p_archive->archive);
+    zip_unchange_archive(p_archive->archive);
+    rb_raise(Error, "Add file failed - %s: %s", StringValuePtr(name), zip_strerror(p_archive->archive));
+  }
+
+  return Qnil;
 }
 
 /* */
