@@ -154,6 +154,14 @@
 				RelativePath=".\ext\zipruby_zip.h"
 				>
 			</File>
+			<File
+				RelativePath=".\ext\zipruby_zip_source_proc.c"
+				>
+			</File>
+			<File
+				RelativePath=".\ext\zipruby_zip_source_proc.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="lib"
