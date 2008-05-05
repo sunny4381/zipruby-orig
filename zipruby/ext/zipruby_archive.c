@@ -323,13 +323,23 @@ static VALUE zipruby_archive_add_buffer(VALUE self, VALUE name, VALUE source) {
 static VALUE zipruby_archive_replace_buffer(VALUE self, VALUE index, VALUE source) {
   struct zipruby_archive *p_archive;
   struct zip_source *zsource;
+  int i_index;
   char *data;
   off_t len;
 
-  Check_Type(index, T_FIXNUM);
+  if (!rb_obj_is_instance_of(index, rb_cString) && !rb_obj_is_instance_of(index, rb_cFixnum)) {
+    rb_raise(rb_eTypeError, "wrong argument type %s (expected Fixnum or String)", rb_class2name(CLASS_OF(index)));
+  }
+
   Check_Type(source, T_STRING);
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
+
+  if (rb_obj_is_instance_of(index, rb_cFixnum)) {
+    i_index = NUM2INT(index);
+  } else if ((i_index = zip_name_locate(p_archive->archive, StringValuePtr(index), ZIP_FL_NOCASE)) == -1) {
+    rb_raise(Error, "Replace file failed - %s: Archive does not contain a file", StringValuePtr(index));
+  }
 
   len = RSTRING(source)->len;
 
@@ -341,14 +351,14 @@ static VALUE zipruby_archive_replace_buffer(VALUE self, VALUE index, VALUE sourc
 
   if ((zsource = zip_source_buffer(p_archive->archive, data, len, 1)) == NULL) {
     free(data);
-    rb_raise(Error, "Replace file failed at %d: %s", NUM2INT(index), zip_strerror(p_archive->archive));
+    rb_raise(Error, "Replace file failed at %d: %s", i_index, zip_strerror(p_archive->archive));
   }
 
-  if (zip_replace(p_archive->archive, NUM2INT(index), zsource) == -1) {
+  if (zip_replace(p_archive->archive, i_index, zsource) == -1) {
     zip_source_free(zsource);
     zip_unchange_all(p_archive->archive);
     zip_unchange_archive(p_archive->archive);
-    rb_raise(Error, "Replace file failed at %d: %s", NUM2INT(index), zip_strerror(p_archive->archive));
+    rb_raise(Error, "Replace file failed at %d: %s", i_index, zip_strerror(p_archive->archive));
   }
 
   return Qnil;
@@ -413,21 +423,31 @@ static VALUE zipruby_archive_add_file(int argc, VALUE *argv, VALUE self) {
 static VALUE zipruby_archive_replace_file(VALUE self, VALUE index, VALUE fname) {
   struct zipruby_archive *p_archive;
   struct zip_source *zsource;
+  int i_index;
 
-  Check_Type(index, T_FIXNUM);
+  if (!rb_obj_is_instance_of(index, rb_cString) && !rb_obj_is_instance_of(index, rb_cFixnum)) {
+    rb_raise(rb_eTypeError, "wrong argument type %s (expected Fixnum or String)", rb_class2name(CLASS_OF(index)));
+  }
+
   Check_Type(fname, T_STRING);
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
 
-  if ((zsource = zip_source_file(p_archive->archive, StringValuePtr(fname), 0, -1)) == NULL) {
-    rb_raise(Error, "Replace file failed at %d: %s", NUM2INT(index), zip_strerror(p_archive->archive));
+  if (rb_obj_is_instance_of(index, rb_cFixnum)) {
+    i_index = NUM2INT(index);
+  } else if ((i_index = zip_name_locate(p_archive->archive, StringValuePtr(index), ZIP_FL_NOCASE)) == -1) {
+    rb_raise(Error, "Replace file failed - %s: Archive does not contain a file", StringValuePtr(index));
   }
 
-  if (zip_replace(p_archive->archive, NUM2INT(index), zsource) == -1) {
+  if ((zsource = zip_source_file(p_archive->archive, StringValuePtr(fname), 0, -1)) == NULL) {
+    rb_raise(Error, "Replace file failed at %d: %s", i_index, zip_strerror(p_archive->archive));
+  }
+
+  if (zip_replace(p_archive->archive, i_index, zsource) == -1) {
     zip_source_free(zsource);
     zip_unchange_all(p_archive->archive);
     zip_unchange_archive(p_archive->archive);
-    rb_raise(Error, "Replace file failed at %d: %s", NUM2INT(index), zip_strerror(p_archive->archive));
+    rb_raise(Error, "Replace file failed at %d: %s", i_index, zip_strerror(p_archive->archive));
   }
 
   return Qnil;
