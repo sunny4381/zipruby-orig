@@ -1099,6 +1099,7 @@ static VALUE zipruby_archive_is_open(VALUE self) {
   return (p_archive->archive != NULL) ? Qtrue : Qfalse;
 }
 
+/* */
 static VALUE zipruby_archive_decrypt(VALUE self, VALUE password) {
   struct zipruby_archive *p_archive;
   long pwdlen;
@@ -1136,6 +1137,7 @@ static VALUE zipruby_archive_decrypt(VALUE self, VALUE password) {
   return Qnil;
 }
 
+/* */
 static VALUE zipruby_archive_encrypt(VALUE self, VALUE password) {
   struct zipruby_archive *p_archive;
   long pwdlen;
