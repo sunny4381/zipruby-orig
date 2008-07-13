@@ -22,7 +22,7 @@ static VALUE zipruby_archive_add_file(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_add_filep(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_add_function(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_replace_buffer(int argc, VALUE *argv, VALUE self);
-static VALUE zipruby_archive_replace_file(VALUE self, VALUE index, VALUE fname);
+static VALUE zipruby_archive_replace_file(int argc, VALUE* argv, VALUE self);
 static VALUE zipruby_archive_replace_filep(VALUE self, VALUE index, VALUE file);
 static VALUE zipruby_archive_replace_function(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_add_or_replace_buffer(int argc, VALUE *argv, VALUE self);
@@ -65,11 +65,11 @@ void Init_zipruby_archive() {
   rb_define_method(Archive, "add_file", zipruby_archive_add_file, -1);
   rb_define_method(Archive, "add_filep", zipruby_archive_add_filep, -1);
   rb_define_method(Archive, "add", zipruby_archive_add_function, -1);
-  rb_define_method(Archive, "replace_buffer", zipruby_archive_replace_buffer, 2);
-  rb_define_method(Archive, "replace_file", zipruby_archive_replace_file, 2);
+  rb_define_method(Archive, "replace_buffer", zipruby_archive_replace_buffer, -1);
+  rb_define_method(Archive, "replace_file", zipruby_archive_replace_file, -1);
   rb_define_method(Archive, "replace_filep", zipruby_archive_replace_filep, 2);
   rb_define_method(Archive, "replace", zipruby_archive_replace_function, -1);
-  rb_define_method(Archive, "add_or_replace_buffer", zipruby_archive_add_or_replace_buffer, 2);
+  rb_define_method(Archive, "add_or_replace_buffer", zipruby_archive_add_or_replace_buffer, -1);
   rb_define_method(Archive, "add_or_replace_file", zipruby_archive_add_or_replace_file, -1);
   rb_define_method(Archive, "add_or_replace_filep", zipruby_archive_add_or_replace_filep, -1);
   rb_define_method(Archive, "add_or_replace", zipruby_archive_add_or_replace_function, -1);
@@ -435,13 +435,20 @@ static VALUE zipruby_archive_add_file(int argc, VALUE *argv, VALUE self) {
 }
 
 /* */
-static VALUE zipruby_archive_replace_file(VALUE self, VALUE index, VALUE fname) {
+static VALUE zipruby_archive_replace_file(int argc, VALUE* argv, VALUE self) {
   struct zipruby_archive *p_archive;
   struct zip_source *zsource;
-  int i_index;
+  VALUE index, fname, flags;
+  int i_index, i_flags = 0;
+
+  rb_scan_args(argc, argv, "21", &index, &fname, &flags);
 
   if (!rb_obj_is_instance_of(index, rb_cString) && !rb_obj_is_instance_of(index, rb_cFixnum)) {
     rb_raise(rb_eTypeError, "wrong argument type %s (expected Fixnum or String)", rb_class2name(CLASS_OF(index)));
+  }
+
+  if (!NIL_P(flags)) {
+    i_flags = NUM2INT(flags);
   }
 
   Check_Type(fname, T_STRING);
@@ -450,7 +457,7 @@ static VALUE zipruby_archive_replace_file(VALUE self, VALUE index, VALUE fname) 
 
   if (rb_obj_is_instance_of(index, rb_cFixnum)) {
     i_index = NUM2INT(index);
-  } else if ((i_index = zip_name_locate(p_archive->archive, StringValuePtr(index), ZIP_FL_NOCASE)) == -1) {
+  } else if ((i_index = zip_name_locate(p_archive->archive, StringValuePtr(index), i_flags)) == -1) {
     rb_raise(Error, "Replace file failed - %s: Archive does not contain a file", StringValuePtr(index));
   }
 
@@ -494,7 +501,8 @@ static VALUE zipruby_archive_add_or_replace_file(int argc, VALUE *argv, VALUE se
   index = zip_name_locate(p_archive->archive, StringValuePtr(name), ZIP_FL_NOCASE);
 
   if (index >= 0) {
-    return zipruby_archive_replace_file(self, INT2NUM(index), fname);
+    VALUE _args[2] = { INT2NUM(index), fname };
+    return zipruby_archive_replace_file(2, _args, self);
   } else {
     return zipruby_archive_add_file(argc, argv, self);
   }
