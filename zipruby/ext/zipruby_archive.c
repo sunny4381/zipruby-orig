@@ -390,8 +390,8 @@ static VALUE zipruby_archive_add_or_replace_buffer(int argc, VALUE *argv, VALUE 
   index = zip_name_locate(p_archive->archive, StringValuePtr(name), i_flags);
 
   if (index >= 0) {
-    VALUE _args[2] = { INT2NUM(index), source };
-    return zipruby_archive_replace_buffer(2, _args, self);
+    VALUE args[] = { INT2NUM(index), source };
+    return zipruby_archive_replace_buffer(2, args, self);
   } else {
     return zipruby_archive_add_buffer(self, name, source);
   }
@@ -510,8 +510,8 @@ static VALUE zipruby_archive_add_or_replace_file(int argc, VALUE *argv, VALUE se
   index = zip_name_locate(p_archive->archive, StringValuePtr(name), i_flags);
 
   if (index >= 0) {
-    VALUE _args[2] = { INT2NUM(index), fname };
-    return zipruby_archive_replace_file(2, _args, self);
+    VALUE args[] = { INT2NUM(index), fname };
+    return zipruby_archive_replace_file(2, args, self);
   } else {
     return zipruby_archive_add_file(argc, argv, self);
   }
@@ -542,14 +542,14 @@ static VALUE zipruby_archive_add_filep(int argc, VALUE *argv, VALUE self) {
 /* */
 static VALUE zipruby_archive_replace_filep(VALUE self, VALUE index, VALUE file) {
   VALUE source;
-  VALUE _args[2];
+  VALUE args[2];
 
   Check_Type(file, T_FILE);
   source = rb_funcall(file, rb_intern("read"), 0);
 
-  _args[0] = index;
-  _args[1] = source;
-  return zipruby_archive_replace_buffer(2, _args, self);
+  args[0] = index;
+  args[1] = source;
+  return zipruby_archive_replace_buffer(2, args, self);
 }
 
 /* */
@@ -682,16 +682,26 @@ static VALUE zipruby_archive_replace_function(int argc, VALUE *argv, VALUE self)
 
 /* */
 static VALUE zipruby_archive_add_or_replace_function(int argc, VALUE *argv, VALUE self) {
-  VALUE name, mtime;
+  VALUE name, mtime, flags;
   struct zipruby_archive *p_archive;
-  int index;
+  int index, i_flags = 0;
 
-  rb_scan_args(argc, argv, "11", &name, &mtime);
+  rb_scan_args(argc, argv, "12", &name, &mtime, &flags);
+
+  if (NIL_P(flags) && FIXNUM_P(mtime)) {
+    flags = mtime;
+    mtime = Qnil;
+  }
+
+  if (!NIL_P(flags)) {
+    i_flags = NUM2INT(flags);
+  }
+
   Check_Type(name, T_STRING);
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
 
-  index = zip_name_locate(p_archive->archive, StringValuePtr(name), ZIP_FL_NOCASE);
+  index = zip_name_locate(p_archive->archive, StringValuePtr(name), i_flags);
 
   if (index >= 0) {
     VALUE args[] = { INT2NUM(index), mtime };
