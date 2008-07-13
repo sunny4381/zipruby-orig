@@ -8,6 +8,7 @@
 #include "rubyio.h"
 
 static VALUE zipruby_archive_alloc(VALUE klass);
+static void zipruby_archive_mark(struct zipruby_archive *p);
 static void zipruby_archive_free(struct zipruby_archive *p);
 static VALUE zipruby_archive_s_open(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_s_decrypt(VALUE self, VALUE path, VALUE password);
@@ -42,6 +43,8 @@ static VALUE zipruby_archive_funchange_all(VALUE self);
 static VALUE zipruby_archive_unchange(VALUE self);
 static VALUE zipruby_archive_revert(VALUE self);
 static VALUE zipruby_archive_each(VALUE self);
+static VALUE zipruby_archive_commit(VALUE self);
+static VALUE zipruby_archive_is_open(VALUE self);
 
 extern VALUE Zip;
 VALUE Archive;
@@ -89,14 +92,22 @@ void Init_zipruby_archive() {
   rb_define_method(Archive, "frevert", zipruby_archive_unchange, 1);
   rb_define_method(Archive, "revert", zipruby_archive_revert, 0);
   rb_define_method(Archive, "each", zipruby_archive_each, 0);
+  rb_define_method(Archive, "commit", zipruby_archive_commit, 0);
+  rb_define_method(Archive, "open?", zipruby_archive_is_open, 0);
 }
 
 static VALUE zipruby_archive_alloc(VALUE klass) {
   struct zipruby_archive *p = ALLOC(struct zipruby_archive);
 
   p->archive = NULL;
+  p->path = Qnil;
+  p->flags = 0;
 
-  return Data_Wrap_Struct(klass, 0, zipruby_archive_free, p);
+  return Data_Wrap_Struct(klass, zipruby_archive_mark, zipruby_archive_free, p);
+}
+
+static void zipruby_archive_mark(struct zipruby_archive *p) {
+  rb_gc_mark(p->path);
 }
 
 static void zipruby_archive_free(struct zipruby_archive *p) {
@@ -126,6 +137,9 @@ static VALUE zipruby_archive_s_open(int argc, VALUE *argv, VALUE self) {
     zip_error_to_str(errstr, ERRSTR_BUFSIZE, errorp, errno);
     rb_raise(Error, "Open archive failed - %s: %s", StringValuePtr(path), errstr);
   }
+
+  p_archive->path = path;
+  p_archive->flags = i_flags;
 
   if (rb_block_given_p()) {
     VALUE retval;
@@ -200,6 +214,10 @@ static VALUE zipruby_archive_s_encrypt(VALUE self, VALUE path, VALUE password) {
 static VALUE zipruby_archive_close(VALUE self) {
   struct zipruby_archive *p_archive;
 
+  if (!zipruby_archive_is_open(self)) {
+    return Qfalse;
+  }
+
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
 
@@ -210,8 +228,10 @@ static VALUE zipruby_archive_close(VALUE self) {
   }
 
   p_archive->archive = NULL;
+  p_archive->path = Qnil;
+  p_archive->flags = 0;
 
-  return Qnil;
+  return Qtrue;
 }
 
 /* */
@@ -1039,4 +1059,38 @@ static VALUE zipruby_archive_each(VALUE self) {
   }
 
   return Qnil;
+}
+
+/* */
+static VALUE zipruby_archive_commit(VALUE self) {
+  struct zipruby_archive *p_archive;
+  int errorp;
+
+  Data_Get_Struct(self, struct zipruby_archive, p_archive);
+  Check_Archive(p_archive);
+
+  if (zip_close(p_archive->archive) == -1) {
+    zip_unchange_all(p_archive->archive);
+    zip_unchange_archive(p_archive->archive);
+    rb_raise(Error, "Commit archive failed: %s", zip_strerror(p_archive->archive));
+  }
+
+  p_archive->archive = NULL;
+  p_archive->flags = (p_archive->flags & ~(ZIP_CREATE | ZIP_EXCL));
+
+  if ((p_archive->archive = zip_open(StringValuePtr(p_archive->path), p_archive->flags, &errorp)) == NULL) {
+    char errstr[ERRSTR_BUFSIZE];
+    zip_error_to_str(errstr, ERRSTR_BUFSIZE, errorp, errno);
+    rb_raise(Error, "Commit archive failed - %s: %s", StringValuePtr(p_archive->path), errstr);
+  }
+
+  return Qnil;
+}
+
+/* */
+static VALUE zipruby_archive_is_open(VALUE self) {
+  struct zipruby_archive *p_archive;
+
+  Data_Get_Struct(self, struct zipruby_archive, p_archive);
+  return (p_archive->archive != NULL) ? Qtrue : Qfalse;
 }
