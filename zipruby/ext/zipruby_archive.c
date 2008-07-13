@@ -390,8 +390,8 @@ static VALUE zipruby_archive_add_or_replace_buffer(int argc, VALUE *argv, VALUE 
   index = zip_name_locate(p_archive->archive, StringValuePtr(name), i_flags);
 
   if (index >= 0) {
-    VALUE args[] = { INT2NUM(index), source };
-    return zipruby_archive_replace_buffer(2, args, self);
+    VALUE _args[] = { INT2NUM(index), source };
+    return zipruby_archive_replace_buffer(2, _args, self);
   } else {
     return zipruby_archive_add_buffer(self, name, source);
   }
@@ -510,10 +510,11 @@ static VALUE zipruby_archive_add_or_replace_file(int argc, VALUE *argv, VALUE se
   index = zip_name_locate(p_archive->archive, StringValuePtr(name), i_flags);
 
   if (index >= 0) {
-    VALUE args[] = { INT2NUM(index), fname };
-    return zipruby_archive_replace_file(2, args, self);
+    VALUE _args[] = { INT2NUM(index), fname };
+    return zipruby_archive_replace_file(2, _args, self);
   } else {
-    return zipruby_archive_add_file(argc, argv, self);
+    VALUE _args[] = { name, fname };
+    return zipruby_archive_add_file(2, _args, self);
   }
 }
 
@@ -542,14 +543,14 @@ static VALUE zipruby_archive_add_filep(int argc, VALUE *argv, VALUE self) {
 /* */
 static VALUE zipruby_archive_replace_filep(VALUE self, VALUE index, VALUE file) {
   VALUE source;
-  VALUE args[2];
+  VALUE _args[2];
 
   Check_Type(file, T_FILE);
   source = rb_funcall(file, rb_intern("read"), 0);
 
-  args[0] = index;
-  args[1] = source;
-  return zipruby_archive_replace_buffer(2, args, self);
+  _args[0] = index;
+  _args[1] = source;
+  return zipruby_archive_replace_buffer(2, _args, self);
 }
 
 /* */
@@ -589,7 +590,8 @@ static VALUE zipruby_archive_add_or_replace_filep(int argc, VALUE *argv, VALUE s
   if (index >= 0) {
     return zipruby_archive_replace_filep(self, INT2NUM(index), file);
   } else {
-    return zipruby_archive_add_filep(argc, argv, self);
+    VALUE _args[] = { name, file };
+    return zipruby_archive_add_filep(2, _args, self);
   }
 }
 
@@ -704,10 +706,11 @@ static VALUE zipruby_archive_add_or_replace_function(int argc, VALUE *argv, VALU
   index = zip_name_locate(p_archive->archive, StringValuePtr(name), i_flags);
 
   if (index >= 0) {
-    VALUE args[] = { INT2NUM(index), mtime };
-    return zipruby_archive_replace_function(2, args, self);
+    VALUE _args[] = { INT2NUM(index), mtime };
+    return zipruby_archive_replace_function(2, _args, self);
   } else {
-    return zipruby_archive_add_function(argc, argv, self);
+    VALUE _args[] = { name, mtime };
+    return zipruby_archive_add_function(2, _args, self);
   }
 }
 
