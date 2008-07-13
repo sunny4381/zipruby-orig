@@ -29,7 +29,7 @@ static VALUE zipruby_archive_add_or_replace_buffer(int argc, VALUE *argv, VALUE 
 static VALUE zipruby_archive_add_or_replace_file(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_add_or_replace_filep(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_add_or_replace_function(int argc, VALUE *argv, VALUE self);
-static VALUE zipruby_archive_update(VALUE self, VALUE srcarchive);
+static VALUE zipruby_archive_update(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_get_comment(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_set_comment(VALUE self, VALUE comment);
 static VALUE zipruby_archive_locate_name(int argc, VALUE *argv, VALUE self);
@@ -73,7 +73,7 @@ void Init_zipruby_archive() {
   rb_define_method(Archive, "add_or_replace_file", zipruby_archive_add_or_replace_file, -1);
   rb_define_method(Archive, "add_or_replace_filep", zipruby_archive_add_or_replace_filep, -1);
   rb_define_method(Archive, "add_or_replace", zipruby_archive_add_or_replace_function, -1);
-  rb_define_method(Archive, "update", zipruby_archive_update, 1);
+  rb_define_method(Archive, "update", zipruby_archive_update, -1);
   rb_define_method(Archive, "<<", zipruby_archive_add_filep, -1);
   rb_define_method(Archive, "get_comment", zipruby_archive_get_comment, -1);
   rb_define_method(Archive, "comment", zipruby_archive_get_comment, -1);
@@ -715,12 +715,19 @@ static VALUE zipruby_archive_add_or_replace_function(int argc, VALUE *argv, VALU
 }
 
 /* */
-static VALUE zipruby_archive_update(VALUE self, VALUE srcarchive) {
+static VALUE zipruby_archive_update(int argc, VALUE *argv, VALUE self) {
   struct zipruby_archive *p_archive, *p_srcarchive;
-  int i, num_files;
+  VALUE srcarchive, flags;
+  int i, num_files, i_flags = 0;
+
+  rb_scan_args(argc, argv, "11", &srcarchive, &flags);
 
   if (!rb_obj_is_instance_of(srcarchive, Archive)) {
     rb_raise(rb_eTypeError, "wrong argument type %s (expected Zip::Archive)", rb_class2name(CLASS_OF(srcarchive)));
+  }
+
+  if (!NIL_P(flags)) {
+    i_flags = NUM2INT(flags);
   }
 
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
@@ -792,7 +799,7 @@ static VALUE zipruby_archive_update(VALUE self, VALUE srcarchive) {
       rb_raise(Error, "Update archive failed: %s", zip_strerror(p_srcarchive->archive));
     }
 
-    index = zip_name_locate(p_archive->archive, name, ZIP_FL_NOCASE);
+    index = zip_name_locate(p_archive->archive, name, i_flags);
 
     if (index >= 0) {
       if (zip_replace(p_archive->archive, i, zsource) == -1) {
