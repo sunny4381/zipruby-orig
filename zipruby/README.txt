@@ -116,10 +116,17 @@ https://rubyforge.org/frs/?group_id=6124
       open('bar.txt') do |f|
         ar.replace_filep(1, f)
       end
-    
+      
+      # if commit changes
+      # ar.commit
+     
       # replace file in zip archive with buffer
       ar.replace_buffer(2, 'Hello, world!')
-
+      # or
+      # ar.replace_buffer('entry name', 'Hello, world!')
+      # if ignore case distinctions 
+      # ar.replace_buffer('entry name', 'Hello, world!', Zip::FL_NOCASE)
+      
       # add or replace file in zip archive
       ar.add_or_replace_file(3, 'foo.txt')
     end
@@ -146,9 +153,17 @@ https://rubyforge.org/frs/?group_id=6124
     
     # encrypt
     Zip::Archive.encrypt('filename.zip', 'password')
+    # or
+    # Zip::Archive.encrypt('filename.zip') do |ar|
+    #   ar.encrypt('filename.zip', 'password')
+    # end
     
     # decrypt
     Zip::Archive.decrypt('filename.zip', 'password')
+    # or
+    # Zip::Archive.decrypt('filename.zip') do |ar|
+    #   ar.decrypt('filename.zip', 'password')
+    # end
 
 == License
     Copyright (c) 2008 SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
