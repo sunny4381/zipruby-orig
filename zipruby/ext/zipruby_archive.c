@@ -477,11 +477,16 @@ static VALUE zipruby_archive_replace_file(int argc, VALUE* argv, VALUE self) {
 
 /* */
 static VALUE zipruby_archive_add_or_replace_file(int argc, VALUE *argv, VALUE self) {
-  VALUE name, fname;
+  VALUE name, fname, flags;
   struct zipruby_archive *p_archive;
-  int index;
+  int index, i_flags = 0;
 
-  rb_scan_args(argc, argv, "11", &name, &fname);
+  rb_scan_args(argc, argv, "12", &name, &fname, &flags);
+
+  if (NIL_P(flags) && FIXNUM_P(fname)) {
+    flags = fname;
+    fname = Qnil;
+  }
 
   if (NIL_P(fname)) {
     fname = name;
@@ -494,11 +499,15 @@ static VALUE zipruby_archive_add_or_replace_file(int argc, VALUE *argv, VALUE se
     name = rb_funcall(rb_cFile, rb_intern("basename"), 1, fname);
   }
 
+  if (!NIL_P(flags)) {
+    i_flags = NUM2INT(flags);
+  }
+
   Check_Type(name, T_STRING);
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
 
-  index = zip_name_locate(p_archive->archive, StringValuePtr(name), ZIP_FL_NOCASE);
+  index = zip_name_locate(p_archive->archive, StringValuePtr(name), i_flags);
 
   if (index >= 0) {
     VALUE _args[2] = { INT2NUM(index), fname };
