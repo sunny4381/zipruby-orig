@@ -25,7 +25,7 @@ static VALUE zipruby_archive_replace_buffer(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_replace_file(VALUE self, VALUE index, VALUE fname);
 static VALUE zipruby_archive_replace_filep(VALUE self, VALUE index, VALUE file);
 static VALUE zipruby_archive_replace_function(int argc, VALUE *argv, VALUE self);
-static VALUE zipruby_archive_add_or_replace_buffer(VALUE self, VALUE name, VALUE source);
+static VALUE zipruby_archive_add_or_replace_buffer(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_add_or_replace_file(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_add_or_replace_filep(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_add_or_replace_function(int argc, VALUE *argv, VALUE self);
@@ -372,15 +372,22 @@ static VALUE zipruby_archive_replace_buffer(int argc, VALUE *argv, VALUE self) {
 }
 
 /* */
-static VALUE zipruby_archive_add_or_replace_buffer(VALUE self, VALUE name, VALUE source) {
+static VALUE zipruby_archive_add_or_replace_buffer(int argc, VALUE *argv, VALUE self) {
   struct zipruby_archive *p_archive;
-  int index;
+  VALUE name, source, flags;
+  int index, i_flags = 0;
+
+  rb_scan_args(argc, argv, "21", &name, &source, &flags);
+
+  if (!NIL_P(flags)) {
+    i_flags = NUM2INT(flags);
+  }
 
   Check_Type(name, T_STRING);
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
 
-  index = zip_name_locate(p_archive->archive, StringValuePtr(name), ZIP_FL_NOCASE);
+  index = zip_name_locate(p_archive->archive, StringValuePtr(name), i_flags);
 
   if (index >= 0) {
     VALUE _args[2] = { INT2NUM(index), source };
