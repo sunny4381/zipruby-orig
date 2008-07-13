@@ -45,6 +45,8 @@ static VALUE zipruby_archive_revert(VALUE self);
 static VALUE zipruby_archive_each(VALUE self);
 static VALUE zipruby_archive_commit(VALUE self);
 static VALUE zipruby_archive_is_open(VALUE self);
+static VALUE zipruby_archive_decrypt(VALUE self, VALUE password);
+static VALUE zipruby_archive_encrypt(VALUE self, VALUE password);
 
 extern VALUE Zip;
 VALUE Archive;
@@ -94,6 +96,8 @@ void Init_zipruby_archive() {
   rb_define_method(Archive, "each", zipruby_archive_each, 0);
   rb_define_method(Archive, "commit", zipruby_archive_commit, 0);
   rb_define_method(Archive, "open?", zipruby_archive_is_open, 0);
+  rb_define_method(Archive, "decrypt", zipruby_archive_decrypt, 1);
+  rb_define_method(Archive, "encrypt", zipruby_archive_encrypt, 1);
 }
 
 static VALUE zipruby_archive_alloc(VALUE klass) {
@@ -1081,7 +1085,7 @@ static VALUE zipruby_archive_commit(VALUE self) {
   if ((p_archive->archive = zip_open(StringValuePtr(p_archive->path), p_archive->flags, &errorp)) == NULL) {
     char errstr[ERRSTR_BUFSIZE];
     zip_error_to_str(errstr, ERRSTR_BUFSIZE, errorp, errno);
-    rb_raise(Error, "Commit archive failed - %s: %s", StringValuePtr(p_archive->path), errstr);
+    rb_raise(Error, "Commit archive failed: %s", errstr);
   }
 
   return Qnil;
@@ -1093,4 +1097,78 @@ static VALUE zipruby_archive_is_open(VALUE self) {
 
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   return (p_archive->archive != NULL) ? Qtrue : Qfalse;
+}
+
+static VALUE zipruby_archive_decrypt(VALUE self, VALUE password) {
+  struct zipruby_archive *p_archive;
+  long pwdlen;
+  int errorp;
+
+  Check_Type(password, T_STRING);
+  pwdlen = RSTRING(password)->len;
+
+  if (pwdlen < 1) {
+    rb_raise(Error, "Decrypt archive failed: Password is empty");
+  } else if (pwdlen > 0xff) {
+    rb_raise(Error, "Decrypt archive failed: Password is too long");
+  }
+
+  Data_Get_Struct(self, struct zipruby_archive, p_archive);
+  Check_Archive(p_archive);
+
+  if (zip_close(p_archive->archive) == -1) {
+    zip_unchange_all(p_archive->archive);
+    zip_unchange_archive(p_archive->archive);
+    rb_raise(Error, "Decrypt archive failed: %s", zip_strerror(p_archive->archive));
+  }
+
+  p_archive->archive = NULL;
+  p_archive->flags = (p_archive->flags & ~(ZIP_CREATE | ZIP_EXCL));
+
+  zipruby_archive_s_decrypt(Archive, p_archive->path, password);
+
+  if ((p_archive->archive = zip_open(StringValuePtr(p_archive->path), p_archive->flags, &errorp)) == NULL) {
+    char errstr[ERRSTR_BUFSIZE];
+    zip_error_to_str(errstr, ERRSTR_BUFSIZE, errorp, errno);
+    rb_raise(Error, "Decrypt archive failed: %s", errstr);
+  }
+
+  return Qnil;
+}
+
+static VALUE zipruby_archive_encrypt(VALUE self, VALUE password) {
+  struct zipruby_archive *p_archive;
+  long pwdlen;
+  int errorp;
+
+  Check_Type(password, T_STRING);
+  pwdlen = RSTRING(password)->len;
+
+  if (pwdlen < 1) {
+    rb_raise(Error, "Encrypt archive failed: Password is empty");
+  } else if (pwdlen > 0xff) {
+    rb_raise(Error, "Encrypt archive failed: Password is too long");
+  }
+
+  Data_Get_Struct(self, struct zipruby_archive, p_archive);
+  Check_Archive(p_archive);
+
+  if (zip_close(p_archive->archive) == -1) {
+    zip_unchange_all(p_archive->archive);
+    zip_unchange_archive(p_archive->archive);
+    rb_raise(Error, "Encrypt archive failed: %s", zip_strerror(p_archive->archive));
+  }
+
+  p_archive->archive = NULL;
+  p_archive->flags = (p_archive->flags & ~(ZIP_CREATE | ZIP_EXCL));
+
+  zipruby_archive_s_encrypt(Archive, p_archive->path, password);
+
+  if ((p_archive->archive = zip_open(StringValuePtr(p_archive->path), p_archive->flags, &errorp)) == NULL) {
+    char errstr[ERRSTR_BUFSIZE];
+    zip_error_to_str(errstr, ERRSTR_BUFSIZE, errorp, errno);
+    rb_raise(Error, "Encrypt archive failed: %s", errstr);
+  }
+
+  return Qnil;
 }
