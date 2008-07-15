@@ -409,6 +409,10 @@ _zip_file_exists(const char *fn, int flags, int *zep)
 	    return -1;
 	}
     }
+    // modified for Zip/Ruby by SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
+    else if ((flags & (ZIP_CREATE | ZIP_TRUNC))) {
+      return 0;
+    }
     else if ((flags & ZIP_EXCL)) {
 	set_error(zep, NULL, ZIP_ER_EXISTS);
 	return -1;
