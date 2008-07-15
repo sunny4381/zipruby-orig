@@ -15,13 +15,13 @@ int _zip_mkstemp(char *);
 #endif
 #endif
 
-char *zipruby_tmpnum() {
+char *zipruby_tmpnum(void *data, int len) {
   char *filnum;
 
 #ifdef _WIN32
   char tmpdirnum[_MAX_PATH];
   char tmpfilnum[_MAX_PATH];
-  int len;
+  int numlen;
 
   memset(tmpdirnum, 0, _MAX_PATH);
 
@@ -35,24 +35,24 @@ char *zipruby_tmpnum() {
     return NULL;
   }
 
-  len = strlen(tmpfilnum) + 1;
+  numlen = strlen(tmpfilnum) + 1;
   filnum = calloc(len, sizeof(char));
 
-  if (strcpy_s(filnum, len, tmpfilnum) != 0) {
+  if (strcpy_s(filnum, numlen, tmpfilnum) != 0) {
     free(filnum);
     return NULL;
   }
 #else
   int fd;
 #ifdef P_tmpdir
-  static int len = 16 + strlen(P_tmpdir);
+  static int numlen = 16 + strlen(P_tmpdir);
   char *dirnum = P_tmpdir;
 #else
-  int len = 20;
+  int numlen = 20;
   char *dirnum = "/tmp";
 #endif
 
-  filnum = calloc(len, sizeof(char));
+  filnum = calloc(numlen, sizeof(char));
   strcpy(filnum, dirnum);
   strcat(filnum, "/zipruby.XXXXXX");
 

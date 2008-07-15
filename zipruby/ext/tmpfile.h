@@ -3,6 +3,6 @@
 
 #include <stdio.h>
 
-char *zipruby_tmpnum();
+char *zipruby_tmpnum(void *data, int len);
 
 #endif
