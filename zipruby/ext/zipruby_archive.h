@@ -8,6 +8,7 @@ struct zipruby_archive {
   struct zip *archive;
   VALUE path;
   int flags;
+  char *tmpfilnam;
 };
 
 void Init_zipruby_archive();

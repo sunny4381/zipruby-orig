@@ -4,6 +4,7 @@
 #include "zipruby.h"
 #include "zipruby_archive.h"
 #include "zipruby_zip_source_proc.h"
+#include "tmpfile.h"
 #include "ruby.h"
 #include "rubyio.h"
 
@@ -11,6 +12,7 @@ static VALUE zipruby_archive_alloc(VALUE klass);
 static void zipruby_archive_mark(struct zipruby_archive *p);
 static void zipruby_archive_free(struct zipruby_archive *p);
 static VALUE zipruby_archive_s_open(int argc, VALUE *argv, VALUE self);
+static VALUE zipruby_archive_s_open_buffer(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_s_decrypt(VALUE self, VALUE path, VALUE password);
 static VALUE zipruby_archive_s_encrypt(VALUE self, VALUE path, VALUE password);
 static VALUE zipruby_archive_close(VALUE self);
@@ -47,6 +49,7 @@ static VALUE zipruby_archive_commit(VALUE self);
 static VALUE zipruby_archive_is_open(VALUE self);
 static VALUE zipruby_archive_decrypt(VALUE self, VALUE password);
 static VALUE zipruby_archive_encrypt(VALUE self, VALUE password);
+static VALUE zipruby_archive_read(VALUE self);
 
 extern VALUE Zip;
 VALUE Archive;
@@ -59,6 +62,7 @@ void Init_zipruby_archive() {
   rb_define_alloc_func(Archive, zipruby_archive_alloc);
   rb_include_module(Archive, rb_mEnumerable);
   rb_define_singleton_method(Archive, "open", zipruby_archive_s_open, -1);
+  rb_define_singleton_method(Archive, "open_buffer", zipruby_archive_s_open_buffer, -1);
   rb_define_singleton_method(Archive, "decrypt", zipruby_archive_s_decrypt, 2);
   rb_define_singleton_method(Archive, "encrypt", zipruby_archive_s_encrypt, 2);
   rb_define_method(Archive, "close", zipruby_archive_close, 0);
@@ -98,6 +102,7 @@ void Init_zipruby_archive() {
   rb_define_method(Archive, "open?", zipruby_archive_is_open, 0);
   rb_define_method(Archive, "decrypt", zipruby_archive_decrypt, 1);
   rb_define_method(Archive, "encrypt", zipruby_archive_encrypt, 1);
+  rb_define_method(Archive, "read", zipruby_archive_read, 0);
 }
 
 static VALUE zipruby_archive_alloc(VALUE klass) {
@@ -106,6 +111,7 @@ static VALUE zipruby_archive_alloc(VALUE klass) {
   p->archive = NULL;
   p->path = Qnil;
   p->flags = 0;
+  p->tmpfilnam = NULL;
 
   return Data_Wrap_Struct(klass, zipruby_archive_mark, zipruby_archive_free, p);
 }
@@ -115,6 +121,10 @@ static void zipruby_archive_mark(struct zipruby_archive *p) {
 }
 
 static void zipruby_archive_free(struct zipruby_archive *p) {
+  if (p->tmpfilnam) {
+    free(p->tmpfilnam);
+  }
+
   xfree(p);
 }
 
@@ -155,6 +165,84 @@ static VALUE zipruby_archive_s_open(int argc, VALUE *argv, VALUE self) {
     if (status != 0) {
       rb_jump_tag(status);
     }
+
+    return retval;
+  } else {
+    return archive;
+  }
+}
+
+/* */
+static VALUE zipruby_archive_s_open_buffer(int argc, VALUE *argv, VALUE self) {
+  VALUE buffer, flags;
+  VALUE archive;
+  struct zipruby_archive *p_archive;
+  char *data = NULL;
+  int len = 0, i_flags = 0;
+  int errorp;
+  int changed, survivors;
+
+  rb_scan_args(argc, argv, "02", &buffer, &flags);
+
+  if (FIXNUM_P(buffer) && NIL_P(flags)) {
+    flags = buffer;
+    buffer = Qnil;
+  }
+
+  if (!NIL_P(flags)) {
+    i_flags = NUM2INT(flags);
+  }
+
+  if (i_flags & ZIP_CREATE) {
+    if (!NIL_P(buffer)) {
+      Check_Type(buffer, T_STRING);
+    }
+
+    i_flags = (i_flags | ZIP_TRUNC);
+  } else {
+    // XXX: support Proc
+    Check_Type(buffer, T_STRING);
+    data = StringValuePtr(buffer);
+    len = RSTRING(buffer)->len;
+  }
+
+  archive = rb_funcall(Archive, rb_intern("new"), 0);
+  Data_Get_Struct(archive, struct zipruby_archive, p_archive);
+
+  if ((p_archive->tmpfilnam = zipruby_tmpnam(data, len)) == NULL) {
+    rb_raise(Error, "Open archive failed: Failed to create temporary file");
+  }
+
+  if ((p_archive->archive = zip_open(p_archive->tmpfilnam, i_flags, &errorp)) == NULL) {
+    char errstr[ERRSTR_BUFSIZE];
+    zip_error_to_str(errstr, ERRSTR_BUFSIZE, errorp, errno);
+    rb_raise(Error, "Open archive failed: %s", errstr);
+  }
+
+  p_archive->path = rb_str_new2(p_archive->tmpfilnam);
+  p_archive->flags = i_flags;
+
+  if (rb_block_given_p()) {
+    VALUE retval;
+    int status;
+
+    retval = rb_protect(rb_yield, archive, &status);
+    changed = _zip_changed(p_archive->archive, &survivors);
+    zipruby_archive_close(archive);
+
+    if (status != 0) {
+      rb_jump_tag(status);
+    }
+
+    if (!NIL_P(buffer) && changed) {
+      rb_funcall(buffer, rb_intern("replace"), 1, rb_funcall(archive, rb_intern("read"), 0));
+    }
+
+#ifdef _WIN32
+    _unlink(p_archive->tmpfilnam);
+#else
+    unlink(p_archive->tmpfilnam);
+#endif
 
     return retval;
   } else {
@@ -232,7 +320,6 @@ static VALUE zipruby_archive_close(VALUE self) {
   }
 
   p_archive->archive = NULL;
-  p_archive->path = Qnil;
   p_archive->flags = 0;
 
   return Qtrue;
@@ -1173,4 +1260,51 @@ static VALUE zipruby_archive_encrypt(VALUE self, VALUE password) {
   }
 
   return Qnil;
+}
+
+static VALUE zipruby_archive_read(VALUE self) {
+  VALUE retval = Qnil;
+  struct zipruby_archive *p_archive;
+  FILE *fzip;
+  char buf[DATA_BUFSIZE];
+  ssize_t n;
+  int block_given;
+
+  Data_Get_Struct(self, struct zipruby_archive, p_archive);
+
+  if (NIL_P(p_archive->path)) {
+    rb_raise(rb_eRuntimeError, "invalid Zip::Archive");
+  }
+
+  if ((fzip = fopen(StringValuePtr(p_archive->path), "rb")) == NULL) {
+    rb_raise(Error, "Read archive failed: Cannot open archive");
+  }
+
+  block_given = rb_block_given_p();
+
+  while ((n = fread(buf, 1, sizeof(buf), fzip)) > 0) {
+    if (block_given) {
+      rb_yield(rb_str_new(buf, n));
+    } else {
+      if (NIL_P(retval)) {
+        retval = rb_str_new(buf, n);
+      } else {
+        rb_str_buf_cat(retval, buf, n);
+      }
+    }
+  }
+
+#ifdef RUBY_WIN32_H
+#undef fclose
+  fclose(fzip);
+#define fclose(f) rb_w32_fclose(f)
+#else
+  fclose(fzip);
+#endif
+
+  if (n == -1) {
+    rb_raise(Error, "Read archive failed");
+  }
+
+  return retval;
 }
