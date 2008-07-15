@@ -8,6 +8,13 @@
 
 #include "tmpfile.h"
 
+#ifndef _WIN32
+#ifndef HAVE_MKSTEMP
+int _zip_mkstemp(char *);
+#define mkstemp _zip_mkstemp
+#endif
+#endif
+
 char *zipruby_tmpnum() {
   char *filnum;
 
