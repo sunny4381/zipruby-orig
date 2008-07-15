@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #ifdef _WIN32
 #include <windows.h>
+#include <io.h>
 #endif
 
 #include "tmpfile.h"
@@ -15,57 +18,82 @@ int _zip_mkstemp(char *);
 #endif
 #endif
 
-char *zipruby_tmpnum(void *data, int len) {
-  char *filnum;
+char *zipruby_tmpnam(void *data, int len) {
+  char *filnam;
 
 #ifdef _WIN32
-  char tmpdirnum[_MAX_PATH];
-  char tmpfilnum[_MAX_PATH];
-  int numlen;
+  int fd;
+  char tmpdirnam[_MAX_PATH];
+  char tmpfilnam[_MAX_PATH];
+  int namlen;
 
-  memset(tmpdirnum, 0, _MAX_PATH);
+  memset(tmpdirnam, 0, _MAX_PATH);
 
-  if (GetTempPathA(_MAX_PATH, tmpdirnum) == 0) {
+  if (GetTempPathA(_MAX_PATH, tmpdirnam) == 0) {
     return NULL;
   }
 
-  memset(tmpfilnum, 0, _MAX_PATH);
+  memset(tmpfilnam, 0, _MAX_PATH);
 
-  if (GetTempFileNameA(tmpdirnum, "zrb", 0, tmpfilnum) == 0) {
+  if (GetTempFileNameA(tmpdirnam, "zrb", 0, tmpfilnam) == 0) {
     return NULL;
   }
 
-  numlen = strlen(tmpfilnum) + 1;
-  filnum = calloc(len, sizeof(char));
+  namlen = strlen(tmpfilnam) + 1;
+  filnam = calloc(namlen, sizeof(char));
 
-  if (strcpy_s(filnum, numlen, tmpfilnum) != 0) {
-    free(filnum);
+  if (strcpy_s(filnam, namlen, tmpfilnam) != 0) {
+    free(filnam);
     return NULL;
+  }
+
+  if (data) {
+    if ((fd = _open(filnam, _O_WRONLY | _O_BINARY, _S_IWRITE)) == -1) {
+      free(filnam);
+      return NULL;
+    }
+
+    if (_write(fd, data, len) == -1) {
+      free(filnam);
+      return NULL;
+    }
+
+    if (_close(fd) == -1) {
+      free(filnam);
+      return NULL;
+    }
   }
 #else
   int fd;
 #ifdef P_tmpdir
-  int numlen = 16 + strlen(P_tmpdir);
-  char *dirnum = P_tmpdir;
+  int namlen = 16 + strlen(P_tmpdir);
+  char *dirnam = P_tmpdir;
 #else
-  int numlen = 20;
-  char *dirnum = "/tmp";
+  int namlen = 20;
+  char *dirnam = "/tmp";
 #endif
 
-  filnum = calloc(numlen, sizeof(char));
-  strcpy(filnum, dirnum);
-  strcat(filnum, "/zipruby.XXXXXX");
+  filnam = calloc(namlen, sizeof(char));
+  strcpy(filnam, dirnam);
+  strcat(filnam, "/zipruby.XXXXXX");
 
-  if ((fd = mkstemp(filnum)) == -1) {
-    free(filnum);
+  if ((fd = mkstemp(filnam)) == -1) {
+    free(filnam);
     return NULL;
+  }
+
+  if (data) {
+    if (write(fd, data, len) == -1) {
+      free(filnam);
+      return NULL;
+    }
   }
 
   if (close(fd) == -1) {
-    free(filnum);
+    free(filnam);
     return NULL;
   }
 #endif
 
-  return filnum;
+  return filnam;
 }
