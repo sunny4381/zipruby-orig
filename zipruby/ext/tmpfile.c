@@ -45,7 +45,7 @@ char *zipruby_tmpnum(void *data, int len) {
 #else
   int fd;
 #ifdef P_tmpdir
-  static int numlen = 16 + strlen(P_tmpdir);
+  int numlen = 16 + strlen(P_tmpdir);
   char *dirnum = P_tmpdir;
 #else
   int numlen = 20;
