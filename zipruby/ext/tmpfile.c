@@ -43,14 +43,17 @@ char *zipruby_tmpnum() {
     return NULL;
   }
 #else
-  int fd, len = 16;
-
-  if (P_tmpdir) {
-    len += P_tmpdir ? strlen(P_tmpdir) : 4;
-  }
+  int fd;
+#ifdef P_tmpdir
+  static int len = 16 + strlen(P_tmpdir);
+  char *dirnum = P_tmpdir;
+#else
+  int len = 20;
+  char *dirnum = "/tmp";
+#endif
 
   filnum = calloc(len, sizeof(char));
-  strcpy(filnum, P_tmpdir ? P_tmpdir : "/tmp");
+  strcpy(filnum, dirnum);
   strcat(filnum, "/zipruby.XXXXXX");
 
   if ((fd = mkstemp(filnum)) == -1) {
