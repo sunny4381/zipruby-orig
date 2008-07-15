@@ -112,6 +112,7 @@ static VALUE zipruby_archive_alloc(VALUE klass) {
   p->path = Qnil;
   p->flags = 0;
   p->tmpfilnam = NULL;
+  p->commit = 0;
 
   return Data_Wrap_Struct(klass, zipruby_archive_mark, zipruby_archive_free, p);
 }
@@ -234,7 +235,7 @@ static VALUE zipruby_archive_s_open_buffer(int argc, VALUE *argv, VALUE self) {
       rb_jump_tag(status);
     }
 
-    if (!NIL_P(buffer) && changed) {
+    if (!NIL_P(buffer) && (changed || p_archive->commit)) {
       rb_funcall(buffer, rb_intern("replace"), 1, rb_funcall(archive, rb_intern("read"), 0));
     }
 
@@ -1168,6 +1169,7 @@ static VALUE zipruby_archive_commit(VALUE self) {
 
   p_archive->archive = NULL;
   p_archive->flags = (p_archive->flags & ~(ZIP_CREATE | ZIP_EXCL));
+  p_archive->commit = 1;
 
   if ((p_archive->archive = zip_open(StringValuePtr(p_archive->path), p_archive->flags, &errorp)) == NULL) {
     char errstr[ERRSTR_BUFSIZE];
@@ -1212,6 +1214,7 @@ static VALUE zipruby_archive_decrypt(VALUE self, VALUE password) {
 
   p_archive->archive = NULL;
   p_archive->flags = (p_archive->flags & ~(ZIP_CREATE | ZIP_EXCL));
+  p_archive->commit = 1;
 
   zipruby_archive_s_decrypt(Archive, p_archive->path, password);
 
@@ -1250,6 +1253,7 @@ static VALUE zipruby_archive_encrypt(VALUE self, VALUE password) {
 
   p_archive->archive = NULL;
   p_archive->flags = (p_archive->flags & ~(ZIP_CREATE | ZIP_EXCL));
+  p_archive->commit = 1;
 
   zipruby_archive_s_encrypt(Archive, p_archive->path, password);
 
