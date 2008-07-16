@@ -112,6 +112,7 @@ static VALUE zipruby_archive_alloc(VALUE klass) {
   p->path = Qnil;
   p->flags = 0;
   p->tmpfilnam = NULL;
+  p->buffer = Qnil;
   p->commit = 0;
 
   return Data_Wrap_Struct(klass, zipruby_archive_mark, zipruby_archive_free, p);
@@ -119,6 +120,7 @@ static VALUE zipruby_archive_alloc(VALUE klass) {
 
 static void zipruby_archive_mark(struct zipruby_archive *p) {
   rb_gc_mark(p->path);
+  rb_gc_mark(p->buffer);
 }
 
 static void zipruby_archive_free(struct zipruby_archive *p) {
@@ -181,7 +183,6 @@ static VALUE zipruby_archive_s_open_buffer(int argc, VALUE *argv, VALUE self) {
   char *data = NULL;
   int len = 0, i_flags = 0;
   int errorp;
-  int changed, survivors;
 
   rb_scan_args(argc, argv, "02", &buffer, &flags);
 
@@ -222,23 +223,18 @@ static VALUE zipruby_archive_s_open_buffer(int argc, VALUE *argv, VALUE self) {
 
   p_archive->path = rb_str_new2(p_archive->tmpfilnam);
   p_archive->flags = i_flags;
+  p_archive->buffer = buffer;
 
   if (rb_block_given_p()) {
     VALUE retval;
     int status;
 
     retval = rb_protect(rb_yield, archive, &status);
-    changed = _zip_changed(p_archive->archive, &survivors);
     zipruby_archive_close(archive);
 
     if (status != 0) {
       rb_jump_tag(status);
     }
-
-    if (!NIL_P(buffer) && (changed || p_archive->commit)) {
-      rb_funcall(buffer, rb_intern("replace"), 1, rb_funcall(archive, rb_intern("read"), 0));
-    }
-
 #ifdef _WIN32
     _unlink(p_archive->tmpfilnam);
 #else
@@ -306,6 +302,7 @@ static VALUE zipruby_archive_s_encrypt(VALUE self, VALUE path, VALUE password) {
 /* */
 static VALUE zipruby_archive_close(VALUE self) {
   struct zipruby_archive *p_archive;
+  int changed, survivors;
 
   if (!zipruby_archive_is_open(self)) {
     return Qfalse;
@@ -314,10 +311,16 @@ static VALUE zipruby_archive_close(VALUE self) {
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
 
+  changed = _zip_changed(p_archive->archive, &survivors);
+
   if (zip_close(p_archive->archive) == -1) {
     zip_unchange_all(p_archive->archive);
     zip_unchange_archive(p_archive->archive);
     rb_raise(Error, "Close archive failed: %s", zip_strerror(p_archive->archive));
+  }
+
+  if (!NIL_P(p_archive->buffer) && (changed || p_archive->commit)) {
+    rb_funcall(p_archive->buffer, rb_intern("replace"), 1, rb_funcall(self, rb_intern("read"), 0));
   }
 
   p_archive->archive = NULL;

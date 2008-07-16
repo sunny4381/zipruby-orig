@@ -9,6 +9,7 @@ struct zipruby_archive {
   VALUE path;
   int flags;
   char *tmpfilnam;
+  VALUE buffer;
   int commit;
 };
 
