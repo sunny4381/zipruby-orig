@@ -107,6 +107,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ext\tmpfile.c"
+				>
+			</File>
+			<File
+				RelativePath=".\ext\tmpfile.h"
+				>
+			</File>
+			<File
 				RelativePath=".\ext\zipruby.c"
 				>
 			</File>
