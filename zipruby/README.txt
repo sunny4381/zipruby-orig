@@ -165,6 +165,39 @@ https://rubyforge.org/frs/?group_id=6124
     #   ar.decrypt('filename.zip', 'password')
     # end
 
+=== modifying zip data in memory
+
+    require 'zipruby'
+    
+    $stdout.binmode
+    
+    buf = ''
+    
+    Zip::Archive.open_buffer(buf, Zip::CREATE) do |ar|
+      ar.add_buffer('bar.txt', 'zoo');
+    end
+    
+    Zip::Archive.open_buffer(buf) do |ar|
+      ar.each do |f|
+        puts f.name
+      end
+    end
+
+    # read from stream    
+    zip_data = open('foo.zip').raed
+    stream = lambda { return !zip_data.slice(0, 256) }
+    
+    Zip::Archive.open_buffer(stream) do |ar|
+      puts ar.num_files
+    end
+    
+    # output huge entry to stdout
+    Zip::Archive.open('bar.zip') do |ar|
+      ar.read do |chunk|
+        print chunk
+      end
+    end
+
 == License
     Copyright (c) 2008 SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
     All rights reserved.
