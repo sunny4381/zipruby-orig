@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fcntl.h>
-#include <sys/stat.h>
 
 #ifdef _WIN32
 #include <windows.h>
 #include <io.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <share.h>
 #endif
 
 #include "tmpfile.h"
@@ -48,7 +49,7 @@ char *zipruby_tmpnam(void *data, int len) {
   }
 
   if (data) {
-    if ((fd = _open(filnam, _O_WRONLY | _O_BINARY, _S_IWRITE)) == -1) {
+    if ((_sopen_s(&fd, filnam, _O_WRONLY | _O_BINARY, _SH_DENYRD, _S_IWRITE)) != 0) {
       free(filnam);
       return NULL;
     }
