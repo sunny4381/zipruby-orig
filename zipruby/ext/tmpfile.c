@@ -42,7 +42,10 @@ char *zipruby_tmpnam(void *data, int len) {
   }
 
   namlen = strlen(tmpfilnam) + 1;
-  filnam = calloc(namlen, sizeof(char));
+
+  if ((filnam = calloc(namlen, sizeof(char))) == NULL) {
+    return NULL;
+  }
 
   if (strcpy_s(filnam, namlen, tmpfilnam) != 0) {
     free(filnam);
@@ -75,7 +78,10 @@ char *zipruby_tmpnam(void *data, int len) {
   char *dirnam = "/tmp";
 #endif
 
-  filnam = calloc(namlen, sizeof(char));
+  if ((filnam = calloc(namlen, sizeof(char))) == NULL) {
+    return NULL;
+  }
+
   strcpy(filnam, dirnam);
   strcat(filnam, "/zipruby.XXXXXX");
 
