@@ -113,7 +113,6 @@ static VALUE zipruby_archive_alloc(VALUE klass) {
   p->flags = 0;
   p->tmpfilnam = NULL;
   p->buffer = Qnil;
-  p->commit = 0;
 
   return Data_Wrap_Struct(klass, zipruby_archive_mark, zipruby_archive_free, p);
 }
@@ -318,7 +317,7 @@ static VALUE zipruby_archive_close(VALUE self) {
     rb_raise(Error, "Close archive failed: %s", zip_strerror(p_archive->archive));
   }
 
-  if (!NIL_P(p_archive->buffer) && (changed || p_archive->commit)) {
+  if (!NIL_P(p_archive->buffer) && changed) {
     rb_funcall(p_archive->buffer, rb_intern("replace"), 1, rb_funcall(self, rb_intern("read"), 0));
   }
 
@@ -1159,10 +1158,13 @@ static VALUE zipruby_archive_each(VALUE self) {
 /* */
 static VALUE zipruby_archive_commit(VALUE self) {
   struct zipruby_archive *p_archive;
+  int changed, survivors;
   int errorp;
 
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
+
+  changed = _zip_changed(p_archive->archive, &survivors);
 
   if (zip_close(p_archive->archive) == -1) {
     zip_unchange_all(p_archive->archive);
@@ -1170,9 +1172,12 @@ static VALUE zipruby_archive_commit(VALUE self) {
     rb_raise(Error, "Commit archive failed: %s", zip_strerror(p_archive->archive));
   }
 
+  if (!NIL_P(p_archive->buffer) && changed) {
+    rb_funcall(p_archive->buffer, rb_intern("replace"), 1, rb_funcall(self, rb_intern("read"), 0));
+  }
+
   p_archive->archive = NULL;
   p_archive->flags = (p_archive->flags & ~(ZIP_CREATE | ZIP_EXCL));
-  p_archive->commit = 1;
 
   if ((p_archive->archive = zip_open(StringValuePtr(p_archive->path), p_archive->flags, &errorp)) == NULL) {
     char errstr[ERRSTR_BUFSIZE];
@@ -1195,6 +1200,7 @@ static VALUE zipruby_archive_is_open(VALUE self) {
 static VALUE zipruby_archive_decrypt(VALUE self, VALUE password) {
   struct zipruby_archive *p_archive;
   long pwdlen;
+  int changed, survivors;
   int errorp;
 
   Check_Type(password, T_STRING);
@@ -1209,15 +1215,20 @@ static VALUE zipruby_archive_decrypt(VALUE self, VALUE password) {
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
 
+  changed = _zip_changed(p_archive->archive, &survivors);
+
   if (zip_close(p_archive->archive) == -1) {
     zip_unchange_all(p_archive->archive);
     zip_unchange_archive(p_archive->archive);
     rb_raise(Error, "Decrypt archive failed: %s", zip_strerror(p_archive->archive));
   }
 
+  if (!NIL_P(p_archive->buffer) && changed) {
+    rb_funcall(p_archive->buffer, rb_intern("replace"), 1, rb_funcall(self, rb_intern("read"), 0));
+  }
+
   p_archive->archive = NULL;
   p_archive->flags = (p_archive->flags & ~(ZIP_CREATE | ZIP_EXCL));
-  p_archive->commit = 1;
 
   zipruby_archive_s_decrypt(Archive, p_archive->path, password);
 
@@ -1234,6 +1245,7 @@ static VALUE zipruby_archive_decrypt(VALUE self, VALUE password) {
 static VALUE zipruby_archive_encrypt(VALUE self, VALUE password) {
   struct zipruby_archive *p_archive;
   long pwdlen;
+  int changed, survivors;
   int errorp;
 
   Check_Type(password, T_STRING);
@@ -1248,15 +1260,20 @@ static VALUE zipruby_archive_encrypt(VALUE self, VALUE password) {
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
 
+  changed = _zip_changed(p_archive->archive, &survivors);
+
   if (zip_close(p_archive->archive) == -1) {
     zip_unchange_all(p_archive->archive);
     zip_unchange_archive(p_archive->archive);
     rb_raise(Error, "Encrypt archive failed: %s", zip_strerror(p_archive->archive));
   }
 
+  if (!NIL_P(p_archive->buffer) && changed) {
+    rb_funcall(p_archive->buffer, rb_intern("replace"), 1, rb_funcall(self, rb_intern("read"), 0));
+  }
+
   p_archive->archive = NULL;
   p_archive->flags = (p_archive->flags & ~(ZIP_CREATE | ZIP_EXCL));
-  p_archive->commit = 1;
 
   zipruby_archive_s_encrypt(Archive, p_archive->path, password);
 

@@ -10,7 +10,6 @@ struct zipruby_archive {
   int flags;
   char *tmpfilnam;
   VALUE buffer;
-  int commit;
 };
 
 void Init_zipruby_archive();
