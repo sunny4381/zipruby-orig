@@ -102,9 +102,16 @@ char *zipruby_tmpnam(void *data, int len) {
   }
 
   if (data) {
-    if (write(fd, data, len) == -1) {
-      free(filnam);
-      return NULL;
+    if (len < 0) {
+      if (write_from_proc((VALUE) data, fd) == -1) {
+        free(filnam);
+        return NULL;
+      }
+    } else {
+      if (write(fd, data, len) == -1) {
+        free(filnam);
+        return NULL;
+      }
     }
   }
 
