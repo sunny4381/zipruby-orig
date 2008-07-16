@@ -191,8 +191,8 @@ https://rubyforge.org/frs/?group_id=6124
       puts ar.num_files
     end
     
-    # output huge entry to stdout
-    Zip::Archive.open('bar.zip') do |ar|
+    # output huge zip data to stdout
+    Zip::Archive.open_buffer(zip_data) do |ar|
       ar.read do |chunk|
         print chunk
       end
