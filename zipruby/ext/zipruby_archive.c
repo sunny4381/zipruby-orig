@@ -181,7 +181,7 @@ static VALUE zipruby_archive_s_open_buffer(int argc, VALUE *argv, VALUE self) {
   VALUE buffer, flags;
   VALUE archive;
   struct zipruby_archive *p_archive;
-  char *data = NULL;
+  void *data = NULL;
   int len = 0, i_flags = 0;
   int errorp;
 
@@ -202,11 +202,14 @@ static VALUE zipruby_archive_s_open_buffer(int argc, VALUE *argv, VALUE self) {
     }
 
     i_flags = (i_flags | ZIP_TRUNC);
-  } else {
-    // XXX: support Proc
-    Check_Type(buffer, T_STRING);
+  } else if (TYPE(buffer) == T_STRING) {
     data = StringValuePtr(buffer);
     len = RSTRING(buffer)->len;
+  } else if (rb_obj_is_instance_of(buffer, rb_cProc)) {
+    data = (void *) buffer;
+    len = -1;
+  } else {
+    rb_raise(rb_eTypeError, "wrong argument type %s (expected String or Proc)", rb_class2name(CLASS_OF(buffer)));
   }
 
   archive = rb_funcall(Archive, rb_intern("new"), 0);

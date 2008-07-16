@@ -12,6 +12,7 @@
 #endif
 
 #include "tmpfile.h"
+#include "ruby.h"
 
 #ifndef _WIN32
 #ifndef HAVE_MKSTEMP
@@ -19,6 +20,9 @@ int _zip_mkstemp(char *);
 #define mkstemp _zip_mkstemp
 #endif
 #endif
+
+static int write_from_proc(VALUE proc, int fd);
+static VALUE proc_call(VALUE proc);
 
 char *zipruby_tmpnam(void *data, int len) {
   char *filnam;
@@ -58,9 +62,16 @@ char *zipruby_tmpnam(void *data, int len) {
       return NULL;
     }
 
-    if (_write(fd, data, len) == -1) {
-      free(filnam);
-      return NULL;
+    if (len < 0) {
+      if (write_from_proc((VALUE) data, fd) == -1) {
+        free(filnam);
+        return NULL;
+      }
+    } else {
+      if (_write(fd, data, len) == -1) {
+        free(filnam);
+        return NULL;
+      }
     }
 
     if (_close(fd) == -1) {
@@ -122,4 +133,34 @@ void zipruby_rmtmp(const char *tmpfilnam) {
 #else
   unlink(tmpfilnam);
 #endif
+}
+
+static int write_from_proc(VALUE proc, int fd) {
+  while (1) {
+    VALUE src = rb_protect(proc_call, proc, NULL);
+
+    if (TYPE(src) != T_STRING) {
+      break;
+    }
+
+    if (RSTRING(src)->len < 1) {
+      break;
+    }
+
+#ifdef _WIN32
+    if (_write(fd, StringValuePtr(src), RSTRING(src)->len) == -1) {
+      return -1;
+    }
+#else
+    if (write(fd, StringValuePtr(src), RSTRING(src)->len) == -1) {
+      return -1;
+    }
+#endif
+  }
+
+  return 0;
+}
+
+static VALUE proc_call(VALUE proc) {
+  return rb_funcall(proc, rb_intern("call"), 0);
 }
