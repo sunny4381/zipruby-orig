@@ -1283,9 +1283,15 @@ static VALUE zipruby_archive_read(VALUE self) {
     rb_raise(rb_eRuntimeError, "invalid Zip::Archive");
   }
 
+#ifdef _WIN32
+  if (fopen_s(&fzip ,StringValuePtr(p_archive->path), "rb") != 0) {
+    rb_raise(Error, "Read archive failed: Cannot open archive");
+  }
+#else
   if ((fzip = fopen(StringValuePtr(p_archive->path), "rb")) == NULL) {
     rb_raise(Error, "Read archive failed: Cannot open archive");
   }
+#endif
 
   block_given = rb_block_given_p();
 
