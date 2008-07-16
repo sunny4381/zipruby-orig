@@ -235,11 +235,6 @@ static VALUE zipruby_archive_s_open_buffer(int argc, VALUE *argv, VALUE self) {
     if (status != 0) {
       rb_jump_tag(status);
     }
-#ifdef _WIN32
-    _unlink(p_archive->tmpfilnam);
-#else
-    unlink(p_archive->tmpfilnam);
-#endif
 
     return retval;
   } else {
@@ -321,6 +316,14 @@ static VALUE zipruby_archive_close(VALUE self) {
 
   if (!NIL_P(p_archive->buffer) && (changed || p_archive->commit)) {
     rb_funcall(p_archive->buffer, rb_intern("replace"), 1, rb_funcall(self, rb_intern("read"), 0));
+  }
+
+  if (p_archive->tmpfilnam) {
+#ifdef _WIN32
+    _unlink(p_archive->tmpfilnam);
+#else
+    unlink(p_archive->tmpfilnam);
+#endif
   }
 
   p_archive->archive = NULL;
