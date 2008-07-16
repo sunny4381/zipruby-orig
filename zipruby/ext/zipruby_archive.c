@@ -125,6 +125,7 @@ static void zipruby_archive_mark(struct zipruby_archive *p) {
 
 static void zipruby_archive_free(struct zipruby_archive *p) {
   if (p->tmpfilnam) {
+    zipruby_rmtmp(p->tmpfilnam);
     free(p->tmpfilnam);
   }
 
@@ -318,14 +319,7 @@ static VALUE zipruby_archive_close(VALUE self) {
     rb_funcall(p_archive->buffer, rb_intern("replace"), 1, rb_funcall(self, rb_intern("read"), 0));
   }
 
-  if (p_archive->tmpfilnam) {
-#ifdef _WIN32
-    _unlink(p_archive->tmpfilnam);
-#else
-    unlink(p_archive->tmpfilnam);
-#endif
-  }
-
+  zipruby_rmtmp(p_archive->tmpfilnam);
   p_archive->archive = NULL;
   p_archive->flags = 0;
 

@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #ifdef _WIN32
 #include <windows.h>
 #include <io.h>
 #include <fcntl.h>
-#include <sys/stat.h>
 #include <share.h>
 #endif
 
@@ -97,4 +98,22 @@ char *zipruby_tmpnam(void *data, int len) {
 #endif
 
   return filnam;
+}
+
+void zipruby_rmtmp(const char *tmpfilnam) {
+  struct stat st;
+
+  if (!tmpfilnam) {
+    return;
+  }
+
+  if (stat(tmpfilnam, &st) != 0) {
+    return;
+  }
+
+#ifdef _WIN32
+  _unlink(tmpfilnam);
+#else
+  unlink(tmpfilnam);
+#endif
 }
