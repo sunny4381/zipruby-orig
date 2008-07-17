@@ -1286,6 +1286,7 @@ static VALUE zipruby_archive_encrypt(VALUE self, VALUE password) {
   return Qnil;
 }
 
+/* */
 static VALUE zipruby_archive_read(VALUE self) {
   VALUE retval = Qnil;
   struct zipruby_archive *p_archive;
