@@ -444,7 +444,7 @@ static VALUE zipruby_archive_replace_buffer(int argc, VALUE *argv, VALUE self) {
 
   rb_scan_args(argc, argv, "21", &index, &source, &flags);
 
-  if (TYPE(index) != T_STRING && TYPE(index) != T_FIXNUM) {
+  if (TYPE(index) != T_STRING && !FIXNUM_P(index)) {
     rb_raise(rb_eTypeError, "wrong argument type %s (expected Fixnum or String)", rb_class2name(CLASS_OF(index)));
   }
 
@@ -456,7 +456,7 @@ static VALUE zipruby_archive_replace_buffer(int argc, VALUE *argv, VALUE self) {
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
 
-  if (TYPE(index) == T_FIXNUM) {
+  if (FIXNUM_P(index)) {
     i_index = NUM2INT(index);
   } else if ((i_index = zip_name_locate(p_archive->archive, RSTRING_PTR(index), i_flags)) == -1) {
     rb_raise(Error, "Replace file failed - %s: Archive does not contain a file", RSTRING_PTR(index));
@@ -557,7 +557,7 @@ static VALUE zipruby_archive_replace_file(int argc, VALUE* argv, VALUE self) {
 
   rb_scan_args(argc, argv, "21", &index, &fname, &flags);
 
-  if (TYPE(index) != T_STRING && TYPE(index) != T_FIXNUM) {
+  if (TYPE(index) != T_STRING && !FIXNUM_P(index)) {
     rb_raise(rb_eTypeError, "wrong argument type %s (expected Fixnum or String)", rb_class2name(CLASS_OF(index)));
   }
 
@@ -569,7 +569,7 @@ static VALUE zipruby_archive_replace_file(int argc, VALUE* argv, VALUE self) {
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
 
-  if (TYPE(index) == T_FIXNUM) {
+  if (FIXNUM_P(index)) {
     i_index = NUM2INT(index);
   } else if ((i_index = zip_name_locate(p_archive->archive, RSTRING_PTR(index), i_flags)) == -1) {
     rb_raise(Error, "Replace file failed - %s: Archive does not contain a file", RSTRING_PTR(index));
