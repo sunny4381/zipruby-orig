@@ -219,6 +219,7 @@ static int copy_encrypt(FILE *src, off_t len, const char *pwd, int pwdlen, struc
 }
 
 static int _zip_crypt(struct zip *za, const char *pwd, int pwdlen, int decrypt, int *wrongpwd) {
+  int translated = 0;
   int i, error = 0;
   char *temp;
   FILE *out;
@@ -296,11 +297,13 @@ static int _zip_crypt(struct zip *za, const char *pwd, int pwdlen, int decrypt, 
       de.bitflags &= ~ZIP_GPBF_ENCRYPTED;
       cd->entry[i].comp_size -= ZIPENC_HEAD_LEN;
       cd->entry[i].bitflags &= ~ZIP_GPBF_ENCRYPTED;
+      translated = 1;
     } else if (!decrypt && !encrypted) {
       de.comp_size += ZIPENC_HEAD_LEN;
       de.bitflags |= ZIP_GPBF_ENCRYPTED;
       cd->entry[i].comp_size += ZIPENC_HEAD_LEN;
       cd->entry[i].bitflags |= ZIP_GPBF_ENCRYPTED;
+      translated = 1;
     }
 
     if (_zip_dirent_write(&de, out, 1, &za->error) < 0) {
@@ -370,7 +373,7 @@ static int _zip_crypt(struct zip *za, const char *pwd, int pwdlen, int decrypt, 
 #endif
 
   free(temp);
-  return 0;
+  return translated;
 }
 
 int zip_decrypt(const char *path, const char *pwd, int pwdlen, int *errorp, int *wrongpwd) {
