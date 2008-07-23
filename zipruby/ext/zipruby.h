@@ -10,7 +10,7 @@
 #define RSTRING_LEN(s) (RSTRING(s)->len)
 #endif
 
-#define VERSION "0.2.8"
+#define VERSION "0.2.9"
 #define ERRSTR_BUFSIZE 256
 #define DATA_BUFSIZE 8192
 
