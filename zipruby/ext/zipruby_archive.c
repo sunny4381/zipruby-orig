@@ -247,6 +247,7 @@ static VALUE zipruby_archive_s_open_buffer(int argc, VALUE *argv, VALUE self) {
 
 /* */
 static VALUE zipruby_archive_s_decrypt(VALUE self, VALUE path, VALUE password) {
+  int res;
   int errorp, wrongpwd;
   long pwdlen;
 
@@ -260,7 +261,9 @@ static VALUE zipruby_archive_s_decrypt(VALUE self, VALUE path, VALUE password) {
     rb_raise(Error, "Decrypt archive failed - %s: Password is too long", RSTRING_PTR(path));
   }
 
-  if (zip_decrypt(RSTRING_PTR(path), RSTRING_PTR(password), pwdlen, &errorp, &wrongpwd) == -1) {
+  res = zip_decrypt(RSTRING_PTR(path), RSTRING_PTR(password), pwdlen, &errorp, &wrongpwd);
+
+  if (res == -1) {
     if (wrongpwd) {
       rb_raise(Error, "Decrypt archive failed - %s: Wrong password", RSTRING_PTR(path));
     } else {
@@ -270,11 +273,12 @@ static VALUE zipruby_archive_s_decrypt(VALUE self, VALUE path, VALUE password) {
     }
   }
 
-  return Qnil;
+  return (res > 0) ? Qtrue : Qfalse;
 }
 
 /* */
 static VALUE zipruby_archive_s_encrypt(VALUE self, VALUE path, VALUE password) {
+  int res;
   int errorp;
   long pwdlen;
 
@@ -288,13 +292,15 @@ static VALUE zipruby_archive_s_encrypt(VALUE self, VALUE path, VALUE password) {
     rb_raise(Error, "Encrypt archive failed - %s: Password is too long", RSTRING_PTR(path));
   }
 
-  if (zip_encrypt(RSTRING_PTR(path), RSTRING_PTR(password), pwdlen, &errorp) == -1) {
+  res = zip_encrypt(RSTRING_PTR(path), RSTRING_PTR(password), pwdlen, &errorp);
+
+  if (res == -1) {
     char errstr[ERRSTR_BUFSIZE];
     zip_error_to_str(errstr, ERRSTR_BUFSIZE, errorp, errno);
     rb_raise(Error, "Encrypt archive failed - %s: %s", RSTRING_PTR(path), errstr);
   }
 
-  return Qnil;
+  return (res > 0) ? Qtrue : Qfalse;
 }
 
 /* */
@@ -1200,6 +1206,7 @@ static VALUE zipruby_archive_is_open(VALUE self) {
 
 /* */
 static VALUE zipruby_archive_decrypt(VALUE self, VALUE password) {
+  VALUE retval;
   struct zipruby_archive *p_archive;
   long pwdlen;
   int changed, survivors;
@@ -1232,7 +1239,7 @@ static VALUE zipruby_archive_decrypt(VALUE self, VALUE password) {
   p_archive->archive = NULL;
   p_archive->flags = (p_archive->flags & ~(ZIP_CREATE | ZIP_EXCL));
 
-  zipruby_archive_s_decrypt(Archive, p_archive->path, password);
+  retval = zipruby_archive_s_decrypt(Archive, p_archive->path, password);
 
   if ((p_archive->archive = zip_open(RSTRING_PTR(p_archive->path), p_archive->flags, &errorp)) == NULL) {
     char errstr[ERRSTR_BUFSIZE];
@@ -1240,11 +1247,12 @@ static VALUE zipruby_archive_decrypt(VALUE self, VALUE password) {
     rb_raise(Error, "Decrypt archive failed: %s", errstr);
   }
 
-  return Qnil;
+  return retval;
 }
 
 /* */
 static VALUE zipruby_archive_encrypt(VALUE self, VALUE password) {
+  VALUE retval;
   struct zipruby_archive *p_archive;
   long pwdlen;
   int changed, survivors;
@@ -1277,7 +1285,7 @@ static VALUE zipruby_archive_encrypt(VALUE self, VALUE password) {
   p_archive->archive = NULL;
   p_archive->flags = (p_archive->flags & ~(ZIP_CREATE | ZIP_EXCL));
 
-  zipruby_archive_s_encrypt(Archive, p_archive->path, password);
+  retval = zipruby_archive_s_encrypt(Archive, p_archive->path, password);
 
   if ((p_archive->archive = zip_open(RSTRING_PTR(p_archive->path), p_archive->flags, &errorp)) == NULL) {
     char errstr[ERRSTR_BUFSIZE];
@@ -1285,7 +1293,7 @@ static VALUE zipruby_archive_encrypt(VALUE self, VALUE password) {
     rb_raise(Error, "Encrypt archive failed: %s", errstr);
   }
 
-  return Qnil;
+  return retval;
 }
 
 /* */
