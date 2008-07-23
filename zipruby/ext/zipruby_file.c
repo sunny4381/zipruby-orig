@@ -104,7 +104,7 @@ static VALUE zipruby_file_initialize(int argc, VALUE *argv, VALUE self) {
   }
 
   switch (TYPE(index)) {
-  case T_STRING: fname = StringValuePtr(index); break;
+  case T_STRING: fname = RSTRING_PTR(index); break;
   case T_FIXNUM: i_index = NUM2INT(index); break;
   default:
     rb_raise(rb_eTypeError, "wrong argument type %s (expected String or Fixnum)", rb_class2name(CLASS_OF(index)));
@@ -260,8 +260,8 @@ static VALUE zipruby_file_set_comment(VALUE self, VALUE comment) {
 
   if (!NIL_P(comment)) {
     Check_Type(comment, T_STRING);
-    s_comment = StringValuePtr(comment);
-    len = RSTRING(comment)->len;
+    s_comment = RSTRING_PTR(comment);
+    len = RSTRING_LEN(comment);
   }
 
   Data_Get_Struct(self, struct zipruby_file, p_file);
@@ -296,10 +296,11 @@ static VALUE zipruby_file_delete(VALUE self) {
 static VALUE zipruby_file_rename(VALUE self, VALUE name) {
   struct zipruby_file *p_file;
 
+  Check_Type(name, T_STRING);
   Data_Get_Struct(self, struct zipruby_file, p_file);
   Check_File(p_file);
 
-  if (zip_rename(p_file->archive, p_file->sb->index, StringValuePtr(name)) == -1) {
+  if (zip_rename(p_file->archive, p_file->sb->index, RSTRING_PTR(name)) == -1) {
     zip_unchange_all(p_file->archive);
     zip_unchange_archive(p_file->archive);
     rb_raise(Error, "Rename file failed - %s: %s", p_file->sb->name, zip_strerror(p_file->archive));

@@ -29,11 +29,11 @@ static ssize_t read_proc(void *state, void *data, size_t len, enum zip_source_cm
       return 0;
     }
 
-    n = RSTRING(src)->len;
+    n = RSTRING_LEN(src);
 
     if (n > 0) {
       n = (n > len) ? len : n;
-      memcpy(buf, StringValuePtr(src), n);
+      memcpy(buf, RSTRING_PTR(src), n);
     }
 
     return n;

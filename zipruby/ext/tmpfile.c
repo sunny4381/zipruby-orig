@@ -150,16 +150,16 @@ static int write_from_proc(VALUE proc, int fd) {
       break;
     }
 
-    if (RSTRING(src)->len < 1) {
+    if (RSTRING_LEN(src) < 1) {
       break;
     }
 
 #ifdef _WIN32
-    if (_write(fd, StringValuePtr(src), RSTRING(src)->len) == -1) {
+    if (_write(fd, RSTRING_PTR(src), RSTRING_LEN(src)) == -1) {
       return -1;
     }
 #else
-    if (write(fd, StringValuePtr(src), RSTRING(src)->len) == -1) {
+    if (write(fd, RSTRING_PTR(src), RSTRING_LEN(src)) == -1) {
       return -1;
     }
 #endif

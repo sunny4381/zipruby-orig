@@ -64,7 +64,7 @@ static VALUE zipruby_stat_initialize(int argc, VALUE *argv, VALUE self) {
   }
 
   switch (TYPE(index)) {
-  case T_STRING: fname = StringValuePtr(index); break;
+  case T_STRING: fname = RSTRING_PTR(index); break;
   case T_FIXNUM: i_index = NUM2INT(index); break;
   default:
     rb_raise(rb_eTypeError, "wrong argument type %s (expected String or Fixnum)", rb_class2name(CLASS_OF(index)));

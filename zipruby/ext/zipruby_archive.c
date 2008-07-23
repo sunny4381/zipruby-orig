@@ -149,10 +149,10 @@ static VALUE zipruby_archive_s_open(int argc, VALUE *argv, VALUE self) {
   archive = rb_funcall(Archive, rb_intern("new"), 0);
   Data_Get_Struct(archive, struct zipruby_archive, p_archive);
 
-  if ((p_archive->archive = zip_open(StringValuePtr(path), i_flags, &errorp)) == NULL) {
+  if ((p_archive->archive = zip_open(RSTRING_PTR(path), i_flags, &errorp)) == NULL) {
     char errstr[ERRSTR_BUFSIZE];
     zip_error_to_str(errstr, ERRSTR_BUFSIZE, errorp, errno);
-    rb_raise(Error, "Open archive failed - %s: %s", StringValuePtr(path), errstr);
+    rb_raise(Error, "Open archive failed - %s: %s", RSTRING_PTR(path), errstr);
   }
 
   p_archive->path = path;
@@ -202,8 +202,8 @@ static VALUE zipruby_archive_s_open_buffer(int argc, VALUE *argv, VALUE self) {
 
     i_flags = (i_flags | ZIP_TRUNC);
   } else if (TYPE(buffer) == T_STRING) {
-    data = StringValuePtr(buffer);
-    len = RSTRING(buffer)->len;
+    data = RSTRING_PTR(buffer);
+    len = RSTRING_LEN(buffer);
   } else if (rb_obj_is_instance_of(buffer, rb_cProc)) {
     data = (void *) buffer;
     len = -1;
@@ -252,21 +252,21 @@ static VALUE zipruby_archive_s_decrypt(VALUE self, VALUE path, VALUE password) {
 
   Check_Type(path, T_STRING);
   Check_Type(password, T_STRING);
-  pwdlen = RSTRING(password)->len;
+  pwdlen = RSTRING_LEN(password);
 
   if (pwdlen < 1) {
-    rb_raise(Error, "Decrypt archive failed - %s: Password is empty", StringValuePtr(path));
+    rb_raise(Error, "Decrypt archive failed - %s: Password is empty", RSTRING_PTR(path));
   } else if (pwdlen > 0xff) {
-    rb_raise(Error, "Decrypt archive failed - %s: Password is too long", StringValuePtr(path));
+    rb_raise(Error, "Decrypt archive failed - %s: Password is too long", RSTRING_PTR(path));
   }
 
-  if (zip_decrypt(StringValuePtr(path), StringValuePtr(password), pwdlen, &errorp, &wrongpwd) == -1) {
+  if (zip_decrypt(RSTRING_PTR(path), RSTRING_PTR(password), pwdlen, &errorp, &wrongpwd) == -1) {
     if (wrongpwd) {
-      rb_raise(Error, "Decrypt archive failed - %s: Wrong password", StringValuePtr(path));
+      rb_raise(Error, "Decrypt archive failed - %s: Wrong password", RSTRING_PTR(path));
     } else {
       char errstr[ERRSTR_BUFSIZE];
       zip_error_to_str(errstr, ERRSTR_BUFSIZE, errorp, errno);
-      rb_raise(Error, "Decrypt archive failed - %s: %s", StringValuePtr(path), errstr);
+      rb_raise(Error, "Decrypt archive failed - %s: %s", RSTRING_PTR(path), errstr);
     }
   }
 
@@ -280,18 +280,18 @@ static VALUE zipruby_archive_s_encrypt(VALUE self, VALUE path, VALUE password) {
 
   Check_Type(path, T_STRING);
   Check_Type(password, T_STRING);
-  pwdlen = RSTRING(password)->len;
+  pwdlen = RSTRING_LEN(password);
 
   if (pwdlen < 1) {
-    rb_raise(Error, "Encrypt archive failed - %s: Password is empty", StringValuePtr(path));
+    rb_raise(Error, "Encrypt archive failed - %s: Password is empty", RSTRING_PTR(path));
   } else if (pwdlen > 0xff) {
-    rb_raise(Error, "Encrypt archive failed - %s: Password is too long", StringValuePtr(path));
+    rb_raise(Error, "Encrypt archive failed - %s: Password is too long", RSTRING_PTR(path));
   }
 
-  if (zip_encrypt(StringValuePtr(path), StringValuePtr(password), pwdlen, &errorp) == -1) {
+  if (zip_encrypt(RSTRING_PTR(path), RSTRING_PTR(password), pwdlen, &errorp) == -1) {
     char errstr[ERRSTR_BUFSIZE];
     zip_error_to_str(errstr, ERRSTR_BUFSIZE, errorp, errno);
-    rb_raise(Error, "Encrypt archive failed - %s: %s", StringValuePtr(path), errstr);
+    rb_raise(Error, "Encrypt archive failed - %s: %s", RSTRING_PTR(path), errstr);
   }
 
   return Qnil;
@@ -409,25 +409,25 @@ static VALUE zipruby_archive_add_buffer(VALUE self, VALUE name, VALUE source) {
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
 
-  len = RSTRING(source)->len;
+  len = RSTRING_LEN(source);
 
   if ((data = malloc(len)) == NULL) {
     rb_raise(rb_eRuntimeError, "Add file failed: Cannot allocate memory");
   }
 
   memset(data, 0, len);
-  memcpy(data, StringValuePtr(source), len);
+  memcpy(data, RSTRING_PTR(source), len);
 
   if ((zsource = zip_source_buffer(p_archive->archive, data, len, 1)) == NULL) {
     free(data);
-    rb_raise(Error, "Add file failed - %s: %s", StringValuePtr(name), zip_strerror(p_archive->archive));
+    rb_raise(Error, "Add file failed - %s: %s", RSTRING_PTR(name), zip_strerror(p_archive->archive));
   }
 
-  if (zip_add(p_archive->archive, StringValuePtr(name), zsource) == -1) {
+  if (zip_add(p_archive->archive, RSTRING_PTR(name), zsource) == -1) {
     zip_source_free(zsource);
     zip_unchange_all(p_archive->archive);
     zip_unchange_archive(p_archive->archive);
-    rb_raise(Error, "Add file failed - %s: %s", StringValuePtr(name), zip_strerror(p_archive->archive));
+    rb_raise(Error, "Add file failed - %s: %s", RSTRING_PTR(name), zip_strerror(p_archive->archive));
   }
 
   return Qnil;
@@ -444,7 +444,7 @@ static VALUE zipruby_archive_replace_buffer(int argc, VALUE *argv, VALUE self) {
 
   rb_scan_args(argc, argv, "21", &index, &source, &flags);
 
-  if (!rb_obj_is_instance_of(index, rb_cString) && !rb_obj_is_instance_of(index, rb_cFixnum)) {
+  if (TYPE(index) != T_STRING && TYPE(index) != T_FIXNUM) {
     rb_raise(rb_eTypeError, "wrong argument type %s (expected Fixnum or String)", rb_class2name(CLASS_OF(index)));
   }
 
@@ -456,19 +456,19 @@ static VALUE zipruby_archive_replace_buffer(int argc, VALUE *argv, VALUE self) {
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
 
-  if (rb_obj_is_instance_of(index, rb_cFixnum)) {
+  if (TYPE(index) == T_FIXNUM) {
     i_index = NUM2INT(index);
-  } else if ((i_index = zip_name_locate(p_archive->archive, StringValuePtr(index), i_flags)) == -1) {
-    rb_raise(Error, "Replace file failed - %s: Archive does not contain a file", StringValuePtr(index));
+  } else if ((i_index = zip_name_locate(p_archive->archive, RSTRING_PTR(index), i_flags)) == -1) {
+    rb_raise(Error, "Replace file failed - %s: Archive does not contain a file", RSTRING_PTR(index));
   }
 
-  len = RSTRING(source)->len;
+  len = RSTRING_LEN(source);
 
   if ((data = malloc(len)) == NULL) {
     rb_raise(rb_eRuntimeError, "Replace file failed: Cannot allocate memory");
   }
 
-  memcpy(data, StringValuePtr(source), len);
+  memcpy(data, RSTRING_PTR(source), len);
 
   if ((zsource = zip_source_buffer(p_archive->archive, data, len, 1)) == NULL) {
     free(data);
@@ -501,7 +501,7 @@ static VALUE zipruby_archive_add_or_replace_buffer(int argc, VALUE *argv, VALUE 
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
 
-  index = zip_name_locate(p_archive->archive, StringValuePtr(name), i_flags);
+  index = zip_name_locate(p_archive->archive, RSTRING_PTR(name), i_flags);
 
   if (index >= 0) {
     VALUE _args[] = { INT2NUM(index), source };
@@ -534,15 +534,15 @@ static VALUE zipruby_archive_add_file(int argc, VALUE *argv, VALUE self) {
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
 
-  if ((zsource = zip_source_file(p_archive->archive, StringValuePtr(fname), 0, -1)) == NULL) {
-    rb_raise(Error, "Add file failed - %s: %s", StringValuePtr(name), zip_strerror(p_archive->archive));
+  if ((zsource = zip_source_file(p_archive->archive, RSTRING_PTR(fname), 0, -1)) == NULL) {
+    rb_raise(Error, "Add file failed - %s: %s", RSTRING_PTR(name), zip_strerror(p_archive->archive));
   }
 
-  if (zip_add(p_archive->archive, StringValuePtr(name), zsource) == -1) {
+  if (zip_add(p_archive->archive, RSTRING_PTR(name), zsource) == -1) {
     zip_source_free(zsource);
     zip_unchange_all(p_archive->archive);
     zip_unchange_archive(p_archive->archive);
-    rb_raise(Error, "Add file failed - %s: %s", StringValuePtr(name), zip_strerror(p_archive->archive));
+    rb_raise(Error, "Add file failed - %s: %s", RSTRING_PTR(name), zip_strerror(p_archive->archive));
   }
 
   return Qnil;
@@ -557,7 +557,7 @@ static VALUE zipruby_archive_replace_file(int argc, VALUE* argv, VALUE self) {
 
   rb_scan_args(argc, argv, "21", &index, &fname, &flags);
 
-  if (!rb_obj_is_instance_of(index, rb_cString) && !rb_obj_is_instance_of(index, rb_cFixnum)) {
+  if (TYPE(index) != T_STRING && TYPE(index) != T_FIXNUM) {
     rb_raise(rb_eTypeError, "wrong argument type %s (expected Fixnum or String)", rb_class2name(CLASS_OF(index)));
   }
 
@@ -569,13 +569,13 @@ static VALUE zipruby_archive_replace_file(int argc, VALUE* argv, VALUE self) {
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
 
-  if (rb_obj_is_instance_of(index, rb_cFixnum)) {
+  if (TYPE(index) == T_FIXNUM) {
     i_index = NUM2INT(index);
-  } else if ((i_index = zip_name_locate(p_archive->archive, StringValuePtr(index), i_flags)) == -1) {
-    rb_raise(Error, "Replace file failed - %s: Archive does not contain a file", StringValuePtr(index));
+  } else if ((i_index = zip_name_locate(p_archive->archive, RSTRING_PTR(index), i_flags)) == -1) {
+    rb_raise(Error, "Replace file failed - %s: Archive does not contain a file", RSTRING_PTR(index));
   }
 
-  if ((zsource = zip_source_file(p_archive->archive, StringValuePtr(fname), 0, -1)) == NULL) {
+  if ((zsource = zip_source_file(p_archive->archive, RSTRING_PTR(fname), 0, -1)) == NULL) {
     rb_raise(Error, "Replace file failed at %d: %s", i_index, zip_strerror(p_archive->archive));
   }
 
@@ -621,7 +621,7 @@ static VALUE zipruby_archive_add_or_replace_file(int argc, VALUE *argv, VALUE se
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
 
-  index = zip_name_locate(p_archive->archive, StringValuePtr(name), i_flags);
+  index = zip_name_locate(p_archive->archive, RSTRING_PTR(name), i_flags);
 
   if (index >= 0) {
     VALUE _args[] = { INT2NUM(index), fname };
@@ -699,7 +699,7 @@ static VALUE zipruby_archive_add_or_replace_filep(int argc, VALUE *argv, VALUE s
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
 
-  index = zip_name_locate(p_archive->archive, StringValuePtr(name), i_flags);
+  index = zip_name_locate(p_archive->archive, RSTRING_PTR(name), i_flags);
 
   if (index >= 0) {
     return zipruby_archive_replace_filep(self, INT2NUM(index), file);
@@ -718,6 +718,7 @@ static VALUE zipruby_archive_add_function(int argc, VALUE *argv, VALUE self) {
 
   rb_scan_args(argc, argv, "11", &name, &mtime);
   rb_need_block();
+  Check_Type(name, T_STRING);
 
   if (NIL_P(mtime)) {
     mtime = rb_funcall(rb_cTime, rb_intern("now"), 0);
@@ -731,7 +732,7 @@ static VALUE zipruby_archive_add_function(int argc, VALUE *argv, VALUE self) {
   if ((z = malloc(sizeof(struct read_proc))) == NULL) {
     zip_unchange_all(p_archive->archive);
     zip_unchange_archive(p_archive->archive);
-    rb_raise(rb_eRuntimeError, "Add failed - %s: Cannot allocate memory", StringValuePtr(name));
+    rb_raise(rb_eRuntimeError, "Add failed - %s: Cannot allocate memory", RSTRING_PTR(name));
   }
 
   z->proc = rb_block_proc();
@@ -739,14 +740,14 @@ static VALUE zipruby_archive_add_function(int argc, VALUE *argv, VALUE self) {
 
   if ((zsource = zip_source_proc(p_archive->archive, z)) == NULL) {
     free(z);
-    rb_raise(Error, "Add failed - %s: %s", StringValuePtr(name), zip_strerror(p_archive->archive));
+    rb_raise(Error, "Add failed - %s: %s", RSTRING_PTR(name), zip_strerror(p_archive->archive));
   }
 
-  if (zip_add(p_archive->archive, StringValuePtr(name), zsource) == -1) {
+  if (zip_add(p_archive->archive, RSTRING_PTR(name), zsource) == -1) {
     zip_source_free(zsource);
     zip_unchange_all(p_archive->archive);
     zip_unchange_archive(p_archive->archive);
-    rb_raise(Error, "Add file failed - %s: %s", StringValuePtr(name), zip_strerror(p_archive->archive));
+    rb_raise(Error, "Add file failed - %s: %s", RSTRING_PTR(name), zip_strerror(p_archive->archive));
   }
 
   return Qnil;
@@ -817,7 +818,7 @@ static VALUE zipruby_archive_add_or_replace_function(int argc, VALUE *argv, VALU
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
 
-  index = zip_name_locate(p_archive->archive, StringValuePtr(name), i_flags);
+  index = zip_name_locate(p_archive->archive, RSTRING_PTR(name), i_flags);
 
   if (index >= 0) {
     VALUE _args[] = { INT2NUM(index), mtime };
@@ -965,8 +966,8 @@ static VALUE zipruby_archive_set_comment(VALUE self, VALUE comment) {
 
   if (!NIL_P(comment)) {
     Check_Type(comment, T_STRING);
-    s_comment = StringValuePtr(comment);
-    len = RSTRING(comment)->len;
+    s_comment = RSTRING_PTR(comment);
+    len = RSTRING_LEN(comment);
   }
 
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
@@ -997,7 +998,7 @@ static VALUE zipruby_archive_locate_name(int argc, VALUE *argv, VALUE self) {
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
 
-  return INT2NUM(zip_name_locate(p_archive->archive, StringValuePtr(fname), i_flags));
+  return INT2NUM(zip_name_locate(p_archive->archive, RSTRING_PTR(fname), i_flags));
 }
 
 /* */
@@ -1030,8 +1031,8 @@ static VALUE zipruby_archive_set_fcomment(VALUE self, VALUE index, VALUE comment
 
   if (!NIL_P(comment)) {
     Check_Type(comment, T_STRING);
-    s_comment = StringValuePtr(comment);
-    len = RSTRING(comment)->len;
+    s_comment = RSTRING_PTR(comment);
+    len = RSTRING_LEN(comment);
   }
 
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
@@ -1066,10 +1067,11 @@ static VALUE zipruby_archive_fdelete(VALUE self, VALUE index) {
 static VALUE zipruby_archive_frename(VALUE self, VALUE index, VALUE name) {
   struct zipruby_archive *p_archive;
 
+  Check_Type(name, T_STRING);
   Data_Get_Struct(self, struct zipruby_archive, p_archive);
   Check_Archive(p_archive);
 
-  if (zip_rename(p_archive->archive, NUM2INT(index), StringValuePtr(name)) == -1) {
+  if (zip_rename(p_archive->archive, NUM2INT(index), RSTRING_PTR(name)) == -1) {
     zip_unchange_all(p_archive->archive);
     zip_unchange_archive(p_archive->archive);
     rb_raise(Error, "Rename file failed at %d: %s", NUM2INT(index), zip_strerror(p_archive->archive));
@@ -1179,7 +1181,7 @@ static VALUE zipruby_archive_commit(VALUE self) {
   p_archive->archive = NULL;
   p_archive->flags = (p_archive->flags & ~(ZIP_CREATE | ZIP_EXCL));
 
-  if ((p_archive->archive = zip_open(StringValuePtr(p_archive->path), p_archive->flags, &errorp)) == NULL) {
+  if ((p_archive->archive = zip_open(RSTRING_PTR(p_archive->path), p_archive->flags, &errorp)) == NULL) {
     char errstr[ERRSTR_BUFSIZE];
     zip_error_to_str(errstr, ERRSTR_BUFSIZE, errorp, errno);
     rb_raise(Error, "Commit archive failed: %s", errstr);
@@ -1204,7 +1206,7 @@ static VALUE zipruby_archive_decrypt(VALUE self, VALUE password) {
   int errorp;
 
   Check_Type(password, T_STRING);
-  pwdlen = RSTRING(password)->len;
+  pwdlen = RSTRING_LEN(password);
 
   if (pwdlen < 1) {
     rb_raise(Error, "Decrypt archive failed: Password is empty");
@@ -1232,7 +1234,7 @@ static VALUE zipruby_archive_decrypt(VALUE self, VALUE password) {
 
   zipruby_archive_s_decrypt(Archive, p_archive->path, password);
 
-  if ((p_archive->archive = zip_open(StringValuePtr(p_archive->path), p_archive->flags, &errorp)) == NULL) {
+  if ((p_archive->archive = zip_open(RSTRING_PTR(p_archive->path), p_archive->flags, &errorp)) == NULL) {
     char errstr[ERRSTR_BUFSIZE];
     zip_error_to_str(errstr, ERRSTR_BUFSIZE, errorp, errno);
     rb_raise(Error, "Decrypt archive failed: %s", errstr);
@@ -1249,7 +1251,7 @@ static VALUE zipruby_archive_encrypt(VALUE self, VALUE password) {
   int errorp;
 
   Check_Type(password, T_STRING);
-  pwdlen = RSTRING(password)->len;
+  pwdlen = RSTRING_LEN(password);
 
   if (pwdlen < 1) {
     rb_raise(Error, "Encrypt archive failed: Password is empty");
@@ -1277,7 +1279,7 @@ static VALUE zipruby_archive_encrypt(VALUE self, VALUE password) {
 
   zipruby_archive_s_encrypt(Archive, p_archive->path, password);
 
-  if ((p_archive->archive = zip_open(StringValuePtr(p_archive->path), p_archive->flags, &errorp)) == NULL) {
+  if ((p_archive->archive = zip_open(RSTRING_PTR(p_archive->path), p_archive->flags, &errorp)) == NULL) {
     char errstr[ERRSTR_BUFSIZE];
     zip_error_to_str(errstr, ERRSTR_BUFSIZE, errorp, errno);
     rb_raise(Error, "Encrypt archive failed: %s", errstr);
@@ -1302,11 +1304,11 @@ static VALUE zipruby_archive_read(VALUE self) {
   }
 
 #ifdef _WIN32
-  if (fopen_s(&fzip ,StringValuePtr(p_archive->path), "rb") != 0) {
+  if (fopen_s(&fzip, RSTRING_PTR(p_archive->path), "rb") != 0) {
     rb_raise(Error, "Read archive failed: Cannot open archive");
   }
 #else
-  if ((fzip = fopen(StringValuePtr(p_archive->path), "rb")) == NULL) {
+  if ((fzip = fopen(RSTRING_PTR(p_archive->path), "rb")) == NULL) {
     rb_raise(Error, "Read archive failed: Cannot open archive");
   }
 #endif
