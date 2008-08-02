@@ -22,15 +22,15 @@ static VALUE zipruby_archive_fopen(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_get_stat(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_add_buffer(VALUE self, VALUE name, VALUE source);
 static VALUE zipruby_archive_add_file(int argc, VALUE *argv, VALUE self);
-static VALUE zipruby_archive_add_filep(int argc, VALUE *argv, VALUE self);
+static VALUE zipruby_archive_add_io(VALUE self, VALUE name, VALUE io);
 static VALUE zipruby_archive_add_function(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_replace_buffer(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_replace_file(int argc, VALUE* argv, VALUE self);
-static VALUE zipruby_archive_replace_filep(VALUE self, VALUE index, VALUE file);
+static VALUE zipruby_archive_replace_io(int argc, VALUE* argv, VALUE self);
 static VALUE zipruby_archive_replace_function(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_add_or_replace_buffer(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_add_or_replace_file(int argc, VALUE *argv, VALUE self);
-static VALUE zipruby_archive_add_or_replace_filep(int argc, VALUE *argv, VALUE self);
+static VALUE zipruby_archive_add_or_replace_io(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_add_or_replace_function(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_update(int argc, VALUE *argv, VALUE self);
 static VALUE zipruby_archive_get_comment(int argc, VALUE *argv, VALUE self);
@@ -72,18 +72,18 @@ void Init_zipruby_archive() {
   rb_define_method(Archive, "get_stat", zipruby_archive_get_stat, -1);
   rb_define_method(Archive, "add_buffer", zipruby_archive_add_buffer, 2);
   rb_define_method(Archive, "add_file", zipruby_archive_add_file, -1);
-  rb_define_method(Archive, "add_filep", zipruby_archive_add_filep, -1);
+  rb_define_method(Archive, "add_io", zipruby_archive_add_io, 2);
   rb_define_method(Archive, "add", zipruby_archive_add_function, -1);
   rb_define_method(Archive, "replace_buffer", zipruby_archive_replace_buffer, -1);
   rb_define_method(Archive, "replace_file", zipruby_archive_replace_file, -1);
-  rb_define_method(Archive, "replace_filep", zipruby_archive_replace_filep, 2);
+  rb_define_method(Archive, "replace_io", zipruby_archive_replace_io, -1);
   rb_define_method(Archive, "replace", zipruby_archive_replace_function, -1);
   rb_define_method(Archive, "add_or_replace_buffer", zipruby_archive_add_or_replace_buffer, -1);
   rb_define_method(Archive, "add_or_replace_file", zipruby_archive_add_or_replace_file, -1);
-  rb_define_method(Archive, "add_or_replace_filep", zipruby_archive_add_or_replace_filep, -1);
+  rb_define_method(Archive, "add_or_replace_io", zipruby_archive_add_or_replace_io, -1);
   rb_define_method(Archive, "add_or_replace", zipruby_archive_add_or_replace_function, -1);
   rb_define_method(Archive, "update", zipruby_archive_update, -1);
-  rb_define_method(Archive, "<<", zipruby_archive_add_filep, -1);
+  rb_define_method(Archive, "<<", zipruby_archive_add_io, 2);
   rb_define_method(Archive, "get_comment", zipruby_archive_get_comment, -1);
   rb_define_method(Archive, "comment", zipruby_archive_get_comment, -1);
   rb_define_method(Archive, "comment=", zipruby_archive_set_comment, 1);
@@ -639,63 +639,38 @@ static VALUE zipruby_archive_add_or_replace_file(int argc, VALUE *argv, VALUE se
 }
 
 /* */
-static VALUE zipruby_archive_add_filep(int argc, VALUE *argv, VALUE self) {
-  VALUE name, file, source;
+static VALUE zipruby_archive_add_io(VALUE self, VALUE name, VALUE io) {
+  VALUE source;
 
-  rb_scan_args(argc, argv, "11", &name, &file);
-
-  if (NIL_P(file)) {
-    file = name;
-    name = Qnil;
-  }
-
-  Check_Type(file, T_FILE);
-
-  if (NIL_P(name)) {
-    name = rb_funcall(rb_cFile, rb_intern("basename"), 1, rb_funcall(file, rb_intern("path"), 0));
-  }
-
-  source = rb_funcall(file, rb_intern("read"), 0);
+  Check_IO(io);
+  source = rb_funcall(io, rb_intern("read"), 0);
 
   return zipruby_archive_add_buffer(self, name,  source);
 }
 
 /* */
-static VALUE zipruby_archive_replace_filep(VALUE self, VALUE index, VALUE file) {
-  VALUE source;
-  VALUE _args[2];
+static VALUE zipruby_archive_replace_io(int argc, VALUE *argv, VALUE self) {
+  VALUE source, io, index, flags;
+  VALUE _args[3];
 
-  Check_Type(file, T_FILE);
-  source = rb_funcall(file, rb_intern("read"), 0);
+  rb_scan_args(argc, argv, "21", &index, &io, &flags);
+  Check_IO(io);
+  source = rb_funcall(io, rb_intern("read"), 0);
 
   _args[0] = index;
   _args[1] = source;
-  return zipruby_archive_replace_buffer(2, _args, self);
+  _args[2] = flags;
+  return zipruby_archive_replace_file(2, _args, self);
 }
 
 /* */
-static VALUE zipruby_archive_add_or_replace_filep(int argc, VALUE *argv, VALUE self) {
-  VALUE name, file, flags;
+static VALUE zipruby_archive_add_or_replace_io(int argc, VALUE *argv, VALUE self) {
+  VALUE name, io, flags;
   struct zipruby_archive *p_archive;
   int index, i_flags = 0;
 
-  rb_scan_args(argc, argv, "12", &name, &file, &flags);
-
-  if (NIL_P(flags) && FIXNUM_P(file)) {
-    flags = file;
-    file = Qnil;
-  }
-
-  if (NIL_P(file)) {
-    file = name;
-    name = Qnil;
-  }
-
-  Check_Type(file, T_FILE);
-
-  if (NIL_P(name)) {
-    name = rb_funcall(rb_cFile, rb_intern("basename"), 1, rb_funcall(file, rb_intern("path"), 0));
-  }
+  rb_scan_args(argc, argv, "21", &name, &io, &flags);
+  Check_IO(io);
 
   if (!NIL_P(flags)) {
     i_flags = NUM2INT(flags);
@@ -708,10 +683,10 @@ static VALUE zipruby_archive_add_or_replace_filep(int argc, VALUE *argv, VALUE s
   index = zip_name_locate(p_archive->archive, RSTRING_PTR(name), i_flags);
 
   if (index >= 0) {
-    return zipruby_archive_replace_filep(self, INT2NUM(index), file);
+    VALUE _args[] = {INT2NUM(index), io, flags};
+    return zipruby_archive_replace_io(2, _args, self);
   } else {
-    VALUE _args[] = { name, file };
-    return zipruby_archive_add_filep(2, _args, self);
+    return zipruby_archive_add_io(self ,name, io);
   }
 }
 
