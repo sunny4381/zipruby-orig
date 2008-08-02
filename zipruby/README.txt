@@ -73,7 +73,7 @@ https://rubyforge.org/frs/?group_id=6124
     
       # add file to zip archive from File object
       open('bar.txt') do |f|
-        ar << f # or ar.add_filep(f)
+        ar << f # or ar.add_io(f)
       end
     
       # add file to zip archive from buffer
@@ -86,7 +86,7 @@ https://rubyforge.org/frs/?group_id=6124
           # args: <entry name>,      <source>
     
       open('bar.txt') do |f|
-        ar.add_filep('dirname/bar.txt', f)
+        ar.add_io('dirname/bar.txt', f)
              # args: <entry name>,      <source>
       end
     
@@ -114,7 +114,7 @@ https://rubyforge.org/frs/?group_id=6124
     
       # replace file in zip archive with File object
       open('bar.txt') do |f|
-        ar.replace_filep(1, f)
+        ar.replace_io(1, f)
       end
       
       # if commit changes
