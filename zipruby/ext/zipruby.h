@@ -11,12 +11,15 @@
 #endif
 
 #define Check_IO(x) do { \
-  if (!rb_obj_is_instance_of((x), rb_cIO)) { \
-    rb_raise(rb_eTypeError, "wrong argument type %s (expected IO)", rb_class2name(CLASS_OF(x))); \
+  const char *classname = rb_class2name(CLASS_OF(x)); \
+  if (rb_obj_is_instance_of((x), rb_cIO)) { \
+    rb_io_binmode(x); \
+  } else if (strcmp(classname, "StringIO") != 0) { \
+    rb_raise(rb_eTypeError, "wrong argument type %s (expected IO or StringIO)", classname); \
   } \
 } while(0)
 
-#define VERSION "0.2.9"
+#define VERSION "0.3.0"
 #define ERRSTR_BUFSIZE 256
 #define DATA_BUFSIZE 8192
 
