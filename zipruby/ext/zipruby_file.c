@@ -1,11 +1,5 @@
 #include <errno.h>
 
-#ifndef _WIN32
-#include <alloca.h>
-#else
-#include <malloc.h>
-#endif
-
 #include "zip.h"
 #include "zipint.h"
 #include "zipruby.h"
