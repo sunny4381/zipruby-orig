@@ -41,6 +41,8 @@
 #include <string.h>
 
 #ifdef _WIN32
+#define snprintf(s, n, f, ...) _snprintf((s), (n), (f), __VA_ARGS__)
+#else
 #define snprintf _snprintf
 #endif
 
