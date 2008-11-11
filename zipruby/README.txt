@@ -155,14 +155,14 @@ https://rubyforge.org/frs/?group_id=6124
     Zip::Archive.encrypt('filename.zip', 'password')
     # or
     # Zip::Archive.encrypt('filename.zip') do |ar|
-    #   ar.encrypt('filename.zip', 'password')
+    #   ar.encrypt('password')
     # end
     
     # decrypt
     Zip::Archive.decrypt('filename.zip', 'password')
     # or
     # Zip::Archive.decrypt('filename.zip') do |ar|
-    #   ar.decrypt('filename.zip', 'password')
+    #   ar.decrypt('password')
     # end
 
 === modifying zip data in memory
