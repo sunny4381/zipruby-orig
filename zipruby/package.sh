@@ -6,7 +6,7 @@ rm -rf doc
 echo "/* rdoc source */" > zipruby.c
 cat ext/*.c >> zipruby.c
 cp ../libzip/*.* ext
-rdoc README.txt zipruby.c --title 'Zip/Ruby - Ruby bindings for libzip.'
+rdoc README.txt zipruby.c LICENSE.libzip --title 'Zip/Ruby - Ruby bindings for libzip.'
 tar jcvf zipruby-${VERSION}.tar.bz2 --exclude=.svn README.txt *.gemspec ext doc
 gem build zipruby.gemspec
 gem build zipruby-mswin32.gemspec
