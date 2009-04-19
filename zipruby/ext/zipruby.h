@@ -12,7 +12,7 @@
 
 #define Check_IO(x) do { \
   const char *classname = rb_class2name(CLASS_OF(x)); \
-  if (rb_obj_is_instance_of((x), rb_cIO)) { \
+  if (rb_obj_is_kind_of((x), rb_cIO)) { \
     rb_io_binmode(x); \
   } else if (strcmp(classname, "StringIO") != 0) { \
     rb_raise(rb_eTypeError, "wrong argument type %s (expected IO or StringIO)", classname); \
