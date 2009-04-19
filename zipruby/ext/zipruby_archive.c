@@ -6,7 +6,7 @@
 #include "zipruby_zip_source_proc.h"
 #include "tmpfile.h"
 #include "ruby.h"
-#if RUBY_VERSION_MAJOR == 1 && RUBY_VERSION_MINOR == 8
+#ifndef RUBY_VM
 #include "rubyio.h"
 #endif
 
@@ -1312,7 +1312,9 @@ static VALUE zipruby_archive_read(VALUE self) {
     }
   }
 
-#ifdef RUBY_WIN32_H
+#if defined(RUBY_VM) && defined(_WIN32)
+  _fclose_nolock(fzip);
+#elif defined(RUBY_WIN32_H)
 #undef fclose
   fclose(fzip);
 #define fclose(f) rb_w32_fclose(f)
