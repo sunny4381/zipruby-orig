@@ -662,7 +662,7 @@ static VALUE zipruby_archive_replace_io(int argc, VALUE *argv, VALUE self) {
   _args[0] = index;
   _args[1] = source;
   _args[2] = flags;
-  return zipruby_archive_replace_file(2, _args, self);
+  return zipruby_archive_replace_buffer(2, _args, self);
 }
 
 /* */
@@ -688,7 +688,7 @@ static VALUE zipruby_archive_add_or_replace_io(int argc, VALUE *argv, VALUE self
     VALUE _args[] = {INT2NUM(index), io, flags};
     return zipruby_archive_replace_io(2, _args, self);
   } else {
-    return zipruby_archive_add_io(self ,name, io);
+    return zipruby_archive_add_io(self, name, io);
   }
 }
 
