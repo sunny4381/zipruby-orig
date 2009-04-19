@@ -452,6 +452,10 @@
 			RelativePath=".\zipruby.gemspec"
 			>
 		</File>
+		<File
+			RelativePath=".\zipruby1.9-mswin32.gemspec"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
