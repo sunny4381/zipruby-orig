@@ -5,7 +5,9 @@
 #include <sys/stat.h>
 
 #ifdef _WIN32
+#if RUBY_VERSION_MAJOR == 1 && RUBY_VERSION_MINOR == 8
 #include <windows.h>
+#endif
 #include <io.h>
 #include <fcntl.h>
 #include <share.h>

@@ -6,7 +6,9 @@
 #include "zipruby_zip_source_proc.h"
 #include "tmpfile.h"
 #include "ruby.h"
+#if RUBY_VERSION_MAJOR == 1 && RUBY_VERSION_MINOR == 8
 #include "rubyio.h"
+#endif
 
 static VALUE zipruby_archive_alloc(VALUE klass);
 static void zipruby_archive_mark(struct zipruby_archive *p);
@@ -408,7 +410,7 @@ static VALUE zipruby_archive_add_buffer(VALUE self, VALUE name, VALUE source) {
   struct zipruby_archive *p_archive;
   struct zip_source *zsource;
   char *data;
-  off_t len;
+  size_t len;
 
   Check_Type(name, T_STRING);
   Check_Type(source, T_STRING);
@@ -446,7 +448,7 @@ static VALUE zipruby_archive_replace_buffer(int argc, VALUE *argv, VALUE self) {
   VALUE index, source, flags;
   int i_index, i_flags = 0;
   char *data;
-  off_t len;
+  size_t len;
 
   rb_scan_args(argc, argv, "21", &index, &source, &flags);
 
