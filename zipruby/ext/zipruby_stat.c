@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "zip.h"
 #include "zipruby.h"
 #include "zipruby_archive.h"
@@ -7,14 +9,6 @@
 static VALUE zipruby_stat_alloc(VALUE klass);
 static void zipruby_stat_free(struct zipruby_stat *p);
 static VALUE zipruby_stat_initialize(int argc, VALUE *argv, VALUE self);
-static VALUE zipruby_stat_name(VALUE self);
-static VALUE zipruby_stat_index(VALUE self);
-static VALUE zipruby_stat_crc(VALUE self);
-static VALUE zipruby_stat_size(VALUE self);
-static VALUE zipruby_stat_mtime(VALUE self);
-static VALUE zipruby_stat_comp_size(VALUE self);
-static VALUE zipruby_stat_comp_method(VALUE self);
-static VALUE zipruby_stat_encryption_method(VALUE self);
 
 extern VALUE Zip;
 extern VALUE Archive;
@@ -33,6 +27,7 @@ void Init_zipruby_stat() {
   rb_define_method(Stat, "comp_size", zipruby_stat_comp_size, 0);
   rb_define_method(Stat, "comp_method", zipruby_stat_comp_method, 0);
   rb_define_method(Stat, "encryption_method", zipruby_stat_encryption_method, 0);
+  rb_define_method(Stat, "directory?", zipruby_stat_is_directory, 0);
 }
 
 static VALUE zipruby_stat_alloc(VALUE klass) {
@@ -92,7 +87,7 @@ static VALUE zipruby_stat_initialize(int argc, VALUE *argv, VALUE self) {
 }
 
 /* */
-static VALUE zipruby_stat_name(VALUE self) {
+VALUE zipruby_stat_name(VALUE self) {
   struct zipruby_stat *p_stat;
 
   Data_Get_Struct(self, struct zipruby_stat, p_stat);
@@ -101,7 +96,7 @@ static VALUE zipruby_stat_name(VALUE self) {
 }
 
 /* */
-static VALUE zipruby_stat_index(VALUE self) {
+VALUE zipruby_stat_index(VALUE self) {
   struct zipruby_stat *p_stat;
 
   Data_Get_Struct(self, struct zipruby_stat, p_stat);
@@ -110,7 +105,7 @@ static VALUE zipruby_stat_index(VALUE self) {
 }
 
 /* */
-static VALUE zipruby_stat_crc(VALUE self) {
+VALUE zipruby_stat_crc(VALUE self) {
   struct zipruby_stat *p_stat;
 
   Data_Get_Struct(self, struct zipruby_stat, p_stat);
@@ -119,7 +114,7 @@ static VALUE zipruby_stat_crc(VALUE self) {
 }
 
 /* */
-static VALUE zipruby_stat_size(VALUE self) {
+VALUE zipruby_stat_size(VALUE self) {
   struct zipruby_stat *p_stat;
 
   Data_Get_Struct(self, struct zipruby_stat, p_stat);
@@ -128,7 +123,7 @@ static VALUE zipruby_stat_size(VALUE self) {
 }
 
 /* */
-static VALUE zipruby_stat_mtime(VALUE self) {
+VALUE zipruby_stat_mtime(VALUE self) {
   struct zipruby_stat *p_stat;
 
   Data_Get_Struct(self, struct zipruby_stat, p_stat);
@@ -137,7 +132,7 @@ static VALUE zipruby_stat_mtime(VALUE self) {
 }
 
 /* */
-static VALUE zipruby_stat_comp_size(VALUE self) {
+VALUE zipruby_stat_comp_size(VALUE self) {
   struct zipruby_stat *p_stat;
 
   Data_Get_Struct(self, struct zipruby_stat, p_stat);
@@ -146,7 +141,7 @@ static VALUE zipruby_stat_comp_size(VALUE self) {
 }
 
 /* */
-static VALUE zipruby_stat_comp_method(VALUE self) {
+VALUE zipruby_stat_comp_method(VALUE self) {
   struct zipruby_stat *p_stat;
 
   Data_Get_Struct(self, struct zipruby_stat, p_stat);
@@ -155,10 +150,34 @@ static VALUE zipruby_stat_comp_method(VALUE self) {
 }
 
 /* */
-static VALUE zipruby_stat_encryption_method(VALUE self) {
+VALUE zipruby_stat_encryption_method(VALUE self) {
   struct zipruby_stat *p_stat;
 
   Data_Get_Struct(self, struct zipruby_stat, p_stat);
 
   return INT2NUM(p_stat->sb->encryption_method);
+}
+
+/* */
+VALUE zipruby_stat_is_directory(VALUE self) {
+  struct zipruby_stat *p_stat;
+  const char *name;
+  size_t name_len;
+  off_t size;
+
+  Data_Get_Struct(self, struct zipruby_stat, p_stat);
+  name = p_stat->sb->name;
+  size = p_stat->sb->size;
+
+  if (!name || size != 0) {
+    return Qfalse;
+  }
+
+  name_len = strlen(name);
+
+  if (name_len > 0 && name[name_len - 1] == '/') {
+    return Qtrue;
+  } else {
+    return Qfalse;
+  }
 }

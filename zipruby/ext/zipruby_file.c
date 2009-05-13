@@ -31,6 +31,7 @@ static VALUE zipruby_file_mtime(VALUE self);
 static VALUE zipruby_file_comp_size(VALUE self);
 static VALUE zipruby_file_comp_method(VALUE self);
 static VALUE zipruby_file_encryption_method(VALUE self);
+static VALUE zipruby_file_is_directory(VALUE self);
 
 extern VALUE Zip;
 extern VALUE Archive;
@@ -60,6 +61,7 @@ void Init_zipruby_file() {
   rb_define_method(File, "comp_size", zipruby_file_comp_size, 0);
   rb_define_method(File, "comp_method", zipruby_file_comp_method, 0);
   rb_define_method(File, "encryption_method", zipruby_file_encryption_method, 0);
+  rb_define_method(File, "directory?", zipruby_file_is_directory, 0);
 }
 
 static VALUE zipruby_file_alloc(VALUE klass) {
@@ -324,7 +326,7 @@ static VALUE zipruby_file_name(VALUE self) {
   Data_Get_Struct(self, struct zipruby_file, p_file);
   Check_File(p_file);
 
-  return rb_funcall(p_file->v_sb, rb_intern("name"), 0);
+  return zipruby_stat_name(p_file->v_sb);
 }
 
 /* */
@@ -334,7 +336,7 @@ static VALUE zipruby_file_index(VALUE self) {
   Data_Get_Struct(self, struct zipruby_file, p_file);
   Check_File(p_file);
 
-  return rb_funcall(p_file->v_sb, rb_intern("index"), 0);
+  return zipruby_stat_index(p_file->v_sb);
 }
 
 /* */
@@ -344,7 +346,7 @@ static VALUE zipruby_file_crc(VALUE self) {
   Data_Get_Struct(self, struct zipruby_file, p_file);
   Check_File(p_file);
 
-  return rb_funcall(p_file->v_sb, rb_intern("crc"), 0);
+  return zipruby_stat_crc(p_file->v_sb);
 }
 
 /* */
@@ -354,7 +356,7 @@ static VALUE zipruby_file_size(VALUE self) {
   Data_Get_Struct(self, struct zipruby_file, p_file);
   Check_File(p_file);
 
-  return rb_funcall(p_file->v_sb, rb_intern("size"), 0);
+  return zipruby_stat_size(p_file->v_sb);
 }
 
 /* */
@@ -364,7 +366,7 @@ static VALUE zipruby_file_mtime(VALUE self) {
   Data_Get_Struct(self, struct zipruby_file, p_file);
   Check_File(p_file);
 
-  return rb_funcall(p_file->v_sb, rb_intern("mtime"), 0);
+  return zipruby_stat_mtime(p_file->v_sb);
 }
 
 /* */
@@ -374,7 +376,7 @@ static VALUE zipruby_file_comp_size(VALUE self) {
   Data_Get_Struct(self, struct zipruby_file, p_file);
   Check_File(p_file);
 
-  return rb_funcall(p_file->v_sb, rb_intern("comp_size"), 0);
+  return zipruby_stat_comp_size(p_file->v_sb);
 }
 
 /* */
@@ -384,7 +386,7 @@ static VALUE zipruby_file_comp_method(VALUE self) {
   Data_Get_Struct(self, struct zipruby_file, p_file);
   Check_File(p_file);
 
-  return rb_funcall(p_file->v_sb, rb_intern("comp_method"), 0);
+  return zipruby_stat_comp_method(p_file->v_sb);
 }
 
 /* */
@@ -394,5 +396,15 @@ static VALUE zipruby_file_encryption_method(VALUE self) {
   Data_Get_Struct(self, struct zipruby_file, p_file);
   Check_File(p_file);
 
-  return rb_funcall(p_file->v_sb, rb_intern("encryption_method"), 0);
+  return zipruby_stat_encryption_method(p_file->v_sb);
+}
+
+/* */
+static VALUE zipruby_file_is_directory(VALUE self) {
+  struct zipruby_file *p_file;
+
+  Data_Get_Struct(self, struct zipruby_file, p_file);
+  Check_File(p_file);
+
+  return zipruby_stat_is_directory(p_file->v_sb);
 }
