@@ -83,15 +83,15 @@ https://rubyforge.org/frs/?group_id=6124
     # include directory in zip archive
     Zip::Archive.open('filename.zip') do |ar|
       ar.add_file('dirname/foo.txt', 'foo.txt')
-          # args: <entry name>,      <source>
+          # args: <entry name>     ,  <source>
     
       open('bar.txt') do |f|
         ar.add_io('dirname/bar.txt', f)
-             # args: <entry name>,      <source>
+          # args: <entry name>     , <source>
       end
     
       ar.add_buffer('dirname/zoo.txt', 'Hello, world!')
-            # args: <entry name>,      <source>
+            # args: <entry name>     , <source>
     end
     
     # add huge file
@@ -185,7 +185,7 @@ https://rubyforge.org/frs/?group_id=6124
 
     # read from stream    
     zip_data = open('foo.zip').raed
-    stream = lambda { return !zip_data.slice(0, 256) }
+    stream = lambda { return zip_data.slice!(0, 256) }
     
     Zip::Archive.open_buffer(stream) do |ar|
       puts ar.num_files
