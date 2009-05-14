@@ -52,6 +52,7 @@ static VALUE zipruby_archive_is_open(VALUE self);
 static VALUE zipruby_archive_decrypt(VALUE self, VALUE password);
 static VALUE zipruby_archive_encrypt(VALUE self, VALUE password);
 static VALUE zipruby_archive_read(VALUE self);
+static VALUE zipruby_archive_add_dir(VALUE self, VALUE name);
 
 extern VALUE Zip;
 VALUE Archive;
@@ -105,6 +106,7 @@ void Init_zipruby_archive() {
   rb_define_method(Archive, "decrypt", zipruby_archive_decrypt, 1);
   rb_define_method(Archive, "encrypt", zipruby_archive_encrypt, 1);
   rb_define_method(Archive, "read", zipruby_archive_read, 0);
+  rb_define_method(Archive, "add_dir", zipruby_archive_add_dir, 1);
 }
 
 static VALUE zipruby_archive_alloc(VALUE klass) {
@@ -1327,4 +1329,21 @@ static VALUE zipruby_archive_read(VALUE self) {
   }
 
   return retval;
+}
+
+/* */
+static VALUE zipruby_archive_add_dir(VALUE self, VALUE name) {
+  struct zipruby_archive *p_archive;
+
+  Check_Type(name, T_STRING);
+  Data_Get_Struct(self, struct zipruby_archive, p_archive);
+  Check_Archive(p_archive);
+
+  if (zip_add_dir(p_archive->archive, RSTRING_PTR(name)) == -1) {
+    zip_unchange_all(p_archive->archive);
+    zip_unchange_archive(p_archive->archive);
+    rb_raise(Error, "Add dir failed - %s: %s", RSTRING_PTR(name), zip_strerror(p_archive->archive));
+  }
+
+  return Qnil;
 }
