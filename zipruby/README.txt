@@ -68,7 +68,7 @@ https://rubyforge.org/frs/?group_id=6124
 
     require 'zipruby'
     
-    Zip::Archive.open('filename.zip', Zip::CREATE) do |ar|
+    Zip::Archive.open('filename.zip', Zip::CREATE) do |ar| # if overwrite: ..., Zip::CREATE | Zip::TRUNC) do |ar|
       ar.add_file('foo.txt') # add file to zip archive
     
       # add file to zip archive from File object
