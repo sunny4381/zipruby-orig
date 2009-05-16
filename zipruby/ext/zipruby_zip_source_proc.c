@@ -14,7 +14,7 @@ static ssize_t read_proc(void *state, void *data, size_t len, enum zip_source_cm
   VALUE src;
   char *buf;
   size_t n;
-  int status;
+  int status = 0;
 
   z = (struct read_proc *) state;
   buf = (char *) data;
