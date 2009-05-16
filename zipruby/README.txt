@@ -184,7 +184,11 @@ https://rubyforge.org/frs/?group_id=6124
     end
 
     # read from stream    
-    zip_data = open('foo.zip').raed
+    zip_data = open('foo.zip') do |f|
+      f.binmode
+      f.read
+    end
+    
     stream = lambda { return zip_data.slice!(0, 256) }
     
     Zip::Archive.open_buffer(stream) do |ar|
