@@ -14,6 +14,7 @@ static ssize_t read_proc(void *state, void *data, size_t len, enum zip_source_cm
   VALUE src;
   char *buf;
   size_t n;
+  int status;
 
   z = (struct read_proc *) state;
   buf = (char *) data;
@@ -23,7 +24,12 @@ static ssize_t read_proc(void *state, void *data, size_t len, enum zip_source_cm
     return 0;
 
   case ZIP_SOURCE_READ:
-    src = rb_protect(proc_call, z->proc, NULL);
+    src = rb_protect(proc_call, z->proc, &status);
+
+    if (status != 0) {
+      rb_warn("Exception throwed in Proc");
+      return -1;
+    }
 
     if (TYPE(src) != T_STRING) {
       return 0;
