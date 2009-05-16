@@ -1,5 +1,9 @@
 2009-05-16 winebarrel
 
+	* improve Zip::Archive#add_io
+
+	* improve Zip::Archive#open_buffer
+
 	* fixes bug: Zip::Archive#add_io, <<
 
 	* add method: Zip::Archive#add_dir
