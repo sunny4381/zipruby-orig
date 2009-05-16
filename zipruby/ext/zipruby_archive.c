@@ -660,7 +660,11 @@ static VALUE zipruby_archive_add_io(int argc, VALUE *argv, VALUE self) {
   Check_IO(file);
 
   if (NIL_P(name)) {
-    name = rb_funcall(rb_cFile, rb_intern("basename"), 1, rb_funcall(file, rb_intern("path"), 0));
+    if (rb_obj_is_kind_of(file, rb_cFile)) {
+      name = rb_funcall(rb_cFile, rb_intern("basename"), 1, rb_funcall(file, rb_intern("path"), 0));
+    } else {
+      rb_raise(rb_eRuntimeError, "Add io failed - %s: Entry name is not given", RSTRING(rb_inspect(file)));
+    }
   }
 
   if (rb_obj_is_kind_of(file, rb_cFile)) {
@@ -698,17 +702,64 @@ static VALUE zipruby_archive_add_io(int argc, VALUE *argv, VALUE self) {
 
 /* */
 static VALUE zipruby_archive_replace_io(int argc, VALUE *argv, VALUE self) {
-  VALUE source, io, index, flags;
-  VALUE _args[3];
+  VALUE file, index, flags, mtime;
+  struct zipruby_archive *p_archive;
+  struct zip_source *zsource;
+  struct read_io *z;
+  int i_index, i_flags = 0;
 
-  rb_scan_args(argc, argv, "21", &index, &io, &flags);
-  Check_IO(io);
-  source = rb_funcall(io, rb_intern("read"), 0);
+  rb_scan_args(argc, argv, "21", &index, &file, &flags);
 
-  _args[0] = index;
-  _args[1] = source;
-  _args[2] = flags;
-  return zipruby_archive_replace_buffer(2, _args, self);
+  if (TYPE(index) != T_STRING && !FIXNUM_P(index)) {
+    rb_raise(rb_eTypeError, "wrong argument type %s (expected Fixnum or String)", rb_class2name(CLASS_OF(index)));
+  }
+
+  Check_IO(file);
+
+  if (!NIL_P(flags)) {
+    i_flags = NUM2INT(flags);
+  }
+
+  if (rb_obj_is_kind_of(file, rb_cFile)) {
+    mtime = rb_funcall(file, rb_intern("mtime"), 0);
+  } else {
+    mtime = rb_funcall(rb_cTime, rb_intern("now"), 0);
+  }
+
+  Data_Get_Struct(self, struct zipruby_archive, p_archive);
+  Check_Archive(p_archive);
+
+  if (FIXNUM_P(index)) {
+    i_index = NUM2INT(index);
+  } else if ((i_index = zip_name_locate(p_archive->archive, RSTRING_PTR(index), i_flags)) == -1) {
+    rb_raise(Error, "Replace io failed - %s: Archive does not contain a file", RSTRING_PTR(index));
+  }
+
+  Data_Get_Struct(self, struct zipruby_archive, p_archive); 
+  Check_Archive(p_archive);
+
+  if ((z = malloc(sizeof(struct read_io))) == NULL) {
+    zip_unchange_all(p_archive->archive);
+    zip_unchange_archive(p_archive->archive);
+    rb_raise(rb_eRuntimeError, "Replace io failed at %d - %s: Cannot allocate memory", i_index, RSTRING(rb_inspect(file)));
+  }
+
+  z->io = file;
+  z->mtime = TIME2LONG(mtime);
+
+  if ((zsource = zip_source_io(p_archive->archive, z)) == NULL) {
+    free(z);
+    rb_raise(Error, "Replace io failed at %d - %s: %s", i_index, RSTRING(rb_inspect(file)), zip_strerror(p_archive->archive));
+  }
+
+  if (zip_replace(p_archive->archive, i_index, zsource) == -1) {
+    zip_source_free(zsource);
+    zip_unchange_all(p_archive->archive);
+    zip_unchange_archive(p_archive->archive);
+    rb_raise(Error, "Replace io failed at %d - %s: %s", i_index, RSTRING(rb_inspect(file)), zip_strerror(p_archive->archive));
+  }
+
+  return Qnil;
 }
 
 /* */
@@ -785,14 +836,18 @@ static VALUE zipruby_archive_add_function(int argc, VALUE *argv, VALUE self) {
 
 /* */
 static VALUE zipruby_archive_replace_function(int argc, VALUE *argv, VALUE self) {
-  VALUE index, mtime;
+  VALUE index, flags, mtime;
   struct zipruby_archive *p_archive;
   struct zip_source *zsource;
   struct read_proc *z;
+  int i_index, i_flags = 0;
 
-  rb_scan_args(argc, argv, "11", &index, &mtime);
+  rb_scan_args(argc, argv, "12", &index, &mtime, &flags);
   rb_need_block();
-  Check_Type(index, T_FIXNUM);
+
+  if (TYPE(index) != T_STRING && !FIXNUM_P(index)) {
+    rb_raise(rb_eTypeError, "wrong argument type %s (expected Fixnum or String)", rb_class2name(CLASS_OF(index)));
+  }
 
   if (NIL_P(mtime)) {
     mtime = rb_funcall(rb_cTime, rb_intern("now"), 0);
@@ -800,13 +855,23 @@ static VALUE zipruby_archive_replace_function(int argc, VALUE *argv, VALUE self)
     rb_raise(rb_eTypeError, "wrong argument type %s (expected Time)", rb_class2name(CLASS_OF(mtime)));
   }
 
+  if (!NIL_P(flags)) {
+    i_flags = NUM2INT(flags);
+  }
+
   Data_Get_Struct(self, struct zipruby_archive, p_archive); 
   Check_Archive(p_archive);
+
+  if (FIXNUM_P(index)) {
+    i_index = NUM2INT(index);
+  } else if ((i_index = zip_name_locate(p_archive->archive, RSTRING_PTR(index), i_flags)) == -1) {
+    rb_raise(Error, "Replace file failed - %s: Archive does not contain a file", RSTRING_PTR(index));
+  }
 
   if ((z = malloc(sizeof(struct read_proc))) == NULL) {
     zip_unchange_all(p_archive->archive);
     zip_unchange_archive(p_archive->archive);
-    rb_raise(rb_eRuntimeError, "Replace failed at %d: Cannot allocate memory", NUM2INT(index));
+    rb_raise(rb_eRuntimeError, "Replace failed at %d: Cannot allocate memory", i_index);
   }
 
   z->proc = rb_block_proc();
@@ -814,14 +879,14 @@ static VALUE zipruby_archive_replace_function(int argc, VALUE *argv, VALUE self)
 
   if ((zsource = zip_source_proc(p_archive->archive, z)) == NULL) {
     free(z);
-    rb_raise(Error, "Replace failed at %d: %s", NUM2INT(index), zip_strerror(p_archive->archive));
+    rb_raise(Error, "Replace failed at %d: %s", i_index, zip_strerror(p_archive->archive));
   }
 
-  if (zip_replace(p_archive->archive, NUM2INT(index), zsource) == -1) {
+  if (zip_replace(p_archive->archive, i_index, zsource) == -1) {
     zip_source_free(zsource);
     zip_unchange_all(p_archive->archive);
     zip_unchange_archive(p_archive->archive);
-    rb_raise(Error, "Replace failed at %d: %s", NUM2INT(index), zip_strerror(p_archive->archive));
+    rb_raise(Error, "Replace failed at %d: %s", i_index, zip_strerror(p_archive->archive));
   }
 
   return Qnil;
