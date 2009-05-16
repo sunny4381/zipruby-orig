@@ -1,5 +1,5 @@
 #!/bin/sh
-VERSION=0.3.0
+VERSION=0.3.1
 
 rm *.gem *.tar.bz2 2> /dev/null
 rm -rf doc
