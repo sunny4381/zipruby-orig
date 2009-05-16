@@ -27,7 +27,16 @@ static ssize_t read_proc(void *state, void *data, size_t len, enum zip_source_cm
     src = rb_protect(proc_call, z->proc, &status);
 
     if (status != 0) {
-      rb_warn("Exception throwed in Proc");
+      VALUE message, clazz;
+
+#if defined(RUBY_VM)
+      message = rb_funcall(rb_errinfo(), rb_intern("message"), 0);
+      clazz = CLASS_OF(rb_errinfo());
+#else
+      message = rb_funcall(ruby_errinfo, rb_intern("message"), 0);
+      clazz = CLASS_OF(ruby_errinfo);
+#endif
+      rb_warn("Error in Proc: %s (%s)", RSTRING_PTR(message), rb_class2name(clazz));
       return -1;
     }
 
