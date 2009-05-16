@@ -437,14 +437,6 @@
 			</Filter>
 		</Filter>
 		<File
-			RelativePath=".\.revision"
-			>
-		</File>
-		<File
-			RelativePath=".\mkcl.sh"
-			>
-		</File>
-		<File
 			RelativePath=".\package.sh"
 			>
 		</File>
