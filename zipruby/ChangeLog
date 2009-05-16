@@ -1,8 +1,6 @@
 2009-05-16 winebarrel
 
-	* improve Zip::Archive#add_io
-
-	* improve Zip::Archive#open_buffer
+	* improve Zip::Archive#open_buffer, add_io, replace_io, replace_function
 
 	* fixes bug: Zip::Archive#add_io, <<
 
