@@ -68,31 +68,35 @@ https://rubyforge.org/frs/?group_id=6124
 
     require 'zipruby'
     
-    Zip::Archive.open('filename.zip', Zip::CREATE) do |ar| # if overwrite: ..., Zip::CREATE | Zip::TRUNC) do |ar|
-      ar.add_file('foo.txt') # add file to zip archive
+    bar_txt =  open('bar.txt')
+    
+    Zip::Archive.open('filename.zip', Zip::CREATE) do |ar|
+      # if overwrite: ..., Zip::CREATE | Zip::TRUNC) do |ar|
+    
+        ar.add_file('foo.txt') # add file to zip archive
     
       # add file to zip archive from File object
-      open('bar.txt') do |f|
-        ar << f # or ar.add_io(f)
-      end
+      ar << bar_txt # or ar.add_io(bar_txt)
     
       # add file to zip archive from buffer
       ar.add_buffer('zoo.txt', 'Hello, world!')
     end
+    
+    bar_txt.rewind
     
     # include directory in zip archive
     Zip::Archive.open('filename.zip') do |ar|
       ar.add_file('dirname/foo.txt', 'foo.txt')
           # args: <entry name>     ,  <source>
     
-      open('bar.txt') do |f|
-        ar.add_io('dirname/bar.txt', f)
-          # args: <entry name>     , <source>
-      end
+      ar.add_io('dirname/bar.txt', bar_txt)
+        # args: <entry name>     , <source>
     
       ar.add_buffer('dirname/zoo.txt', 'Hello, world!')
             # args: <entry name>     , <source>
     end
+    
+    bar_txt.close # close file after archive closed
     
     # add huge file
     source = %w(London Bridge is falling down)
@@ -108,18 +112,18 @@ https://rubyforge.org/frs/?group_id=6124
 
     require 'zipruby'
     
+    bar_txt = open('bar.txt')
+    
     Zip::Archive.open('filename.zip') do |ar|
       # replace file in zip archive
       ar.replace_file(0, 'foo.txt')
     
       # replace file in zip archive with File object
-      open('bar.txt') do |f|
-        ar.replace_io(1, f)
-      end
-      
+      ar.replace_io(1, bar_txt)
+    
       # if commit changes
       # ar.commit
-     
+    
       # replace file in zip archive with buffer
       ar.replace_buffer(2, 'Hello, world!')
       # or
@@ -128,7 +132,7 @@ https://rubyforge.org/frs/?group_id=6124
       # ar.replace_buffer('entry name', 'Hello, world!', Zip::FL_NOCASE)
       
       # add or replace file in zip archive
-      ar.add_or_replace_file(3, 'foo.txt')
+      ar.add_or_replace_file('zoo.txt', 'foo.txt')
     end
     
     # append comment    
@@ -139,6 +143,8 @@ https://rubyforge.org/frs/?group_id=6124
         suigyoumatsu unraimatsu furaimatsu
       EOS
     end
+    
+    bar_txt.close # close file after archive closed
     
     # ar1 import ar2 entries
     Zip::Archive.open('ar1.zip') do |ar1|
@@ -152,16 +158,16 @@ https://rubyforge.org/frs/?group_id=6124
     require 'zipruby'
     
     # encrypt
-    Zip::Archive.encrypt('filename.zip', 'password')
+    Zip::Archive.encrypt('filename.zip', 'password') # return true if encrypted
     # or
-    # Zip::Archive.encrypt('filename.zip') do |ar|
+    # Zip::Archive.open('filename.zip') do |ar|
     #   ar.encrypt('password')
     # end
     
     # decrypt
-    Zip::Archive.decrypt('filename.zip', 'password')
+    Zip::Archive.decrypt('filename.zip', 'password') # return true if encrypted
     # or
-    # Zip::Archive.decrypt('filename.zip') do |ar|
+    # Zip::Archive.open('filename.zip') do |ar|
     #   ar.decrypt('password')
     # end
 
@@ -182,8 +188,8 @@ https://rubyforge.org/frs/?group_id=6124
         puts f.name
       end
     end
-
-    # read from stream    
+    
+    # read from stream
     zip_data = open('foo.zip') do |f|
       f.binmode
       f.read
@@ -202,7 +208,44 @@ https://rubyforge.org/frs/?group_id=6124
       end
     end
 
+=== adding directory recursively
+
+    require 'zipruby'
+    
+    Zip::Archive.open('filename.zip', Zip::CREATE) do |ar|
+      ar.add_dir('dir')
+    
+      Dir.glob('dir/**/*').each do |path|
+        if File.directory?(path)
+          ar.add_dir(path)
+        else
+          ar.add_file(path, path) # add_file(<entry name>, <source path>)
+        end
+      end
+    end
+
+=== extract all files
+
+    require 'zipruby'
+    require 'fileutils'
+    
+    Zip::Archive.open('filename.zip') do |ar|
+      ar.each do |zf|
+        if zf.directory?
+          FileUtils.mkdir_p(zf.name)
+        else
+          dirname = File.dirname(zf.name)
+          FileUtils.mkdir_p(dirname) unless File.exist?(dirname)
+    
+          open(zf.name, 'wb') do |f|
+            f << zf.read
+          end
+        end
+      end
+    end
+
 == License
+
     Copyright (c) 2008,2009 SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
     All rights reserved.
     
@@ -230,6 +273,7 @@ https://rubyforge.org/frs/?group_id=6124
     DAMAGE.
 
 === libzip
+
 Zip/Ruby contains libzip.
 
 libzip is a C library for reading, creating, and modifying zip archives.
