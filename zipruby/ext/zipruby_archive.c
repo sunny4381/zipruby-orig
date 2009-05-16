@@ -4,6 +4,7 @@
 #include "zipruby.h"
 #include "zipruby_archive.h"
 #include "zipruby_zip_source_proc.h"
+#include "zipruby_zip_source_io.h"
 #include "tmpfile.h"
 #include "ruby.h"
 #ifndef RUBY_VM
@@ -644,7 +645,10 @@ static VALUE zipruby_archive_add_or_replace_file(int argc, VALUE *argv, VALUE se
 
 /* */
 static VALUE zipruby_archive_add_io(int argc, VALUE *argv, VALUE self) {
-  VALUE name, file, source;
+  VALUE name, file, mtime;
+  struct zipruby_archive *p_archive;
+  struct zip_source *zsource;
+  struct read_io *z;
 
   rb_scan_args(argc, argv, "11", &name, &file);
 
@@ -659,9 +663,37 @@ static VALUE zipruby_archive_add_io(int argc, VALUE *argv, VALUE self) {
     name = rb_funcall(rb_cFile, rb_intern("basename"), 1, rb_funcall(file, rb_intern("path"), 0));
   }
 
-  source = rb_funcall(file, rb_intern("read"), 0);
+  if (rb_obj_is_kind_of(file, rb_cFile)) {
+    mtime = rb_funcall(file, rb_intern("mtime"), 0);
+  } else {
+    mtime = rb_funcall(rb_cTime, rb_intern("now"), 0);
+  }
 
-  return zipruby_archive_add_buffer(self, name,  source);
+  Data_Get_Struct(self, struct zipruby_archive, p_archive); 
+  Check_Archive(p_archive);
+
+  if ((z = malloc(sizeof(struct read_io))) == NULL) {
+    zip_unchange_all(p_archive->archive);
+    zip_unchange_archive(p_archive->archive);
+    rb_raise(rb_eRuntimeError, "Add io failed - %s: Cannot allocate memory", RSTRING(rb_inspect(file)));
+  }
+
+  z->io = file;
+  z->mtime = TIME2LONG(mtime);
+
+  if ((zsource = zip_source_io(p_archive->archive, z)) == NULL) {
+    free(z);
+    rb_raise(Error, "Add io failed - %s: %s", RSTRING(rb_inspect(file)), zip_strerror(p_archive->archive));
+  }
+
+  if (zip_add(p_archive->archive, RSTRING_PTR(name), zsource) == -1) {
+    zip_source_free(zsource);
+    zip_unchange_all(p_archive->archive);
+    zip_unchange_archive(p_archive->archive);
+    rb_raise(Error, "Add io failed - %s: %s", RSTRING_PTR(name), zip_strerror(p_archive->archive));
+  }
+
+  return Qnil;
 }
 
 /* */
@@ -734,7 +766,7 @@ static VALUE zipruby_archive_add_function(int argc, VALUE *argv, VALUE self) {
   }
 
   z->proc = rb_block_proc();
-  z->mtime = mtime;
+  z->mtime = TIME2LONG(mtime);
 
   if ((zsource = zip_source_proc(p_archive->archive, z)) == NULL) {
     free(z);
@@ -778,7 +810,7 @@ static VALUE zipruby_archive_replace_function(int argc, VALUE *argv, VALUE self)
   }
 
   z->proc = rb_block_proc();
-  z->mtime = mtime;
+  z->mtime = TIME2LONG(mtime);
 
   if ((zsource = zip_source_proc(p_archive->archive, z)) == NULL) {
     free(z);

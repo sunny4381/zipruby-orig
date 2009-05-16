@@ -404,6 +404,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ext\zipruby_zip_source_io.c"
+				>
+			</File>
+			<File
+				RelativePath=".\ext\zipruby_zip_source_io.h"
+				>
+			</File>
+			<File
 				RelativePath=".\ext\zipruby_zip_source_proc.c"
 				>
 			</File>

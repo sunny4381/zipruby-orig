@@ -6,7 +6,7 @@
 
 struct read_proc {
   VALUE proc;
-  VALUE mtime;
+  long mtime;
 };
 
 struct zip_source *zip_source_proc(struct zip *za, struct read_proc *z);
