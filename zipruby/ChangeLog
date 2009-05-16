@@ -1,0 +1,8 @@
+2009-05-16 winebarrel
+
+	* fixes bug: Zip::Archive#add_io, <<
+
+	* add method: Zip::Archive#add_dir
+
+	* zipruby/README.txt: fixes example code.
+

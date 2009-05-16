@@ -437,6 +437,10 @@
 			</Filter>
 		</Filter>
 		<File
+			RelativePath=".\ChangeLog"
+			>
+		</File>
+		<File
 			RelativePath=".\package.sh"
 			>
 		</File>
