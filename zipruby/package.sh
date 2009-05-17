@@ -10,7 +10,7 @@ do
 done
 cat ext/*.c >> zipruby.c
 cp ../libzip/*.{c,h} ext
-rdoc README.txt zipruby.c LICENSE.libzip --title 'Zip/Ruby - Ruby bindings for libzip.'
+rdoc README.txt zipruby.c LICENSE.libzip ChangeLog --title 'Zip/Ruby - Ruby bindings for libzip.'
 mkdir work
 cp -r * work 2> /dev/null
 cd work
