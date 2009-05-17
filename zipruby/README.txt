@@ -165,7 +165,7 @@ https://rubyforge.org/frs/?group_id=6124
     # end
     
     # decrypt
-    Zip::Archive.decrypt('filename.zip', 'password') # return true if encrypted
+    Zip::Archive.decrypt('filename.zip', 'password') # return true if decrypted
     # or
     # Zip::Archive.open('filename.zip') do |ar|
     #   ar.decrypt('password')
