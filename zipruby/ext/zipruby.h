@@ -21,7 +21,7 @@
 
 #define TIME2LONG(v) NUM2LONG(rb_funcall((v), rb_intern("tv_sec"), 0))
 
-#define VERSION "0.3.1"
+#define VERSION "0.3.2"
 #define ERRSTR_BUFSIZE 256
 #define DATA_BUFSIZE 8192
 
