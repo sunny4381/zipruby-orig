@@ -1,3 +1,7 @@
+2009-06-11 winebarrel
+
+   * fixes bug: C macro mistake
+
 2009-05-16 winebarrel
 
 	* improve Zip::Archive#add_io, replace_io, add, replace
