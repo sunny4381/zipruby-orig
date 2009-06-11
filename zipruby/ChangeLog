@@ -1,6 +1,6 @@
 2009-06-11 winebarrel
 
-   * fixes bug: C macro mistake
+   * fixes bug: C macro mistake (reported by SHITAMORI Akira)
 
 2009-05-16 winebarrel
 
