@@ -1,6 +1,6 @@
 = Zip/Ruby
 
-Copyright (c) 2008 SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
+Copyright (c) 2008-2010 SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
 
 == Description
 
