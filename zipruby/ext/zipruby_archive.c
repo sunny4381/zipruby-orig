@@ -118,6 +118,7 @@ static VALUE zipruby_archive_alloc(VALUE klass) {
   p->flags = 0;
   p->tmpfilnam = NULL;
   p->buffer = Qnil;
+  p->sources = Qnil;
 
   return Data_Wrap_Struct(klass, zipruby_archive_mark, zipruby_archive_free, p);
 }
@@ -125,6 +126,7 @@ static VALUE zipruby_archive_alloc(VALUE klass) {
 static void zipruby_archive_mark(struct zipruby_archive *p) {
   rb_gc_mark(p->path);
   rb_gc_mark(p->buffer);
+  rb_gc_mark(p->sources);
 }
 
 static void zipruby_archive_free(struct zipruby_archive *p) {
@@ -162,6 +164,7 @@ static VALUE zipruby_archive_s_open(int argc, VALUE *argv, VALUE self) {
 
   p_archive->path = path;
   p_archive->flags = i_flags;
+  p_archive->sources = rb_ary_new();
 
   if (rb_block_given_p()) {
     VALUE retval;
@@ -232,6 +235,7 @@ static VALUE zipruby_archive_s_open_buffer(int argc, VALUE *argv, VALUE self) {
   p_archive->path = rb_str_new2(p_archive->tmpfilnam);
   p_archive->flags = i_flags;
   p_archive->buffer = buffer;
+  p_archive->sources = rb_ary_new();
 
   if (rb_block_given_p()) {
     VALUE retval;
@@ -683,6 +687,7 @@ static VALUE zipruby_archive_add_io(int argc, VALUE *argv, VALUE self) {
   }
 
   z->io = file;
+  rb_ary_push(p_archive->sources, file);
   z->mtime = TIME2LONG(mtime);
 
   if ((zsource = zip_source_io(p_archive->archive, z)) == NULL) {
@@ -745,6 +750,7 @@ static VALUE zipruby_archive_replace_io(int argc, VALUE *argv, VALUE self) {
   }
 
   z->io = file;
+  rb_ary_push(p_archive->sources, file);
   z->mtime = TIME2LONG(mtime);
 
   if ((zsource = zip_source_io(p_archive->archive, z)) == NULL) {
@@ -817,6 +823,7 @@ static VALUE zipruby_archive_add_function(int argc, VALUE *argv, VALUE self) {
   }
 
   z->proc = rb_block_proc();
+  rb_ary_push(p_archive->sources, z->proc);
   z->mtime = TIME2LONG(mtime);
 
   if ((zsource = zip_source_proc(p_archive->archive, z)) == NULL) {
@@ -875,6 +882,7 @@ static VALUE zipruby_archive_replace_function(int argc, VALUE *argv, VALUE self)
   }
 
   z->proc = rb_block_proc();
+  rb_ary_push(p_archive->sources, z->proc);
   z->mtime = TIME2LONG(mtime);
 
   if ((zsource = zip_source_proc(p_archive->archive, z)) == NULL) {
