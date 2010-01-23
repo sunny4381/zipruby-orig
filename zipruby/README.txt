@@ -86,6 +86,7 @@ https://rubyforge.org/frs/?group_id=6124
     
     # include directory in zip archive
     Zip::Archive.open('filename.zip') do |ar|
+      ar.add_dir('dirname')
       ar.add_file('dirname/foo.txt', 'foo.txt')
           # args: <entry name>     ,  <source>
     
