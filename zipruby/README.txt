@@ -247,7 +247,7 @@ https://rubyforge.org/frs/?group_id=6124
 
 == License
 
-    Copyright (c) 2008,2009 SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
+    Copyright (c) 2008-2010 SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
     All rights reserved.
     
     Redistribution and use in source and binary forms, with or without modification,
