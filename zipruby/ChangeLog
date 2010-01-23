@@ -1,3 +1,7 @@
+2010-01-23 winebarrel
+
+   * fixes bug: [ruby-dev:40120] SEGV on zipruby with irb
+
 2009-06-11 winebarrel
 
    * fixes bug: C macro mistake (reported by SHITAMORI Akira)
