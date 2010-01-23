@@ -1,3 +1,5 @@
+#include <zlib.h>
+
 #include "ruby.h"
 #include "zip.h"
 #include "zipruby.h"
@@ -35,4 +37,9 @@ void Init_zipruby_zip() {
   rb_define_const(Zip, "EM_NONE",        INT2NUM(ZIP_EM_NONE));
   rb_define_const(Zip, "EM_TRAD_PKWARE", INT2NUM(ZIP_EM_TRAD_PKWARE));
   // XXX: Strong Encryption Header not parsed yet
+
+  rb_define_const(Zip, "NO_COMPRESSION",      INT2NUM(Z_NO_COMPRESSION));
+  rb_define_const(Zip, "BEST_SPEED",          INT2NUM(Z_BEST_SPEED));
+  rb_define_const(Zip, "BEST_COMPRESSION",    INT2NUM(Z_BEST_COMPRESSION));
+  rb_define_const(Zip, "DEFAULT_COMPRESSION", INT2NUM(Z_DEFAULT_COMPRESSION));
 }

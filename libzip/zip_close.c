@@ -55,8 +55,11 @@
 static int add_data(struct zip *, int, struct zip_dirent *, FILE *);
 static int add_data_comp(zip_source_callback, void *, struct zip_stat *,
 			 FILE *, struct zip_error *);
+// modified for Zip/Ruby by SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
+//static int add_data_uncomp(zip_source_callback, void *, struct zip_stat *,
+//			   FILE *, struct zip_error *);
 static int add_data_uncomp(zip_source_callback, void *, struct zip_stat *,
-			   FILE *, struct zip_error *);
+			   FILE *, struct zip_error *, int comp_level);
 static void ch_set_error(struct zip_error *, zip_source_callback, void *);
 // modified for Zip/Ruby by SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
 //static int copy_data(FILE *, off_t, FILE *, struct zip_error *);
@@ -297,7 +300,7 @@ add_data(struct zip *za, int idx, struct zip_dirent *de, FILE *ft)
 	    return -1;
     }
     else {
-	if (add_data_uncomp(cb, ud, &st, ft, &za->error) < 0)
+	if (add_data_uncomp(cb, ud, &st, ft, &za->error, za->comp_level) < 0)
 	    return -1;
     }
 
@@ -358,9 +361,13 @@ add_data_comp(zip_source_callback cb, void *ud, struct zip_stat *st,FILE *ft,
 
 
 
+// modified for Zip/Ruby by SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
+//static int
+//add_data_uncomp(zip_source_callback cb, void *ud, struct zip_stat *st,
+//		FILE *ft, struct zip_error *error)
 static int
 add_data_uncomp(zip_source_callback cb, void *ud, struct zip_stat *st,
-		FILE *ft, struct zip_error *error)
+		FILE *ft, struct zip_error *error, int comp_level)
 {
     char b1[BUFSIZE], b2[BUFSIZE];
     int end, flush, ret;
@@ -379,7 +386,9 @@ add_data_uncomp(zip_source_callback cb, void *ud, struct zip_stat *st,
     zstr.avail_out = 0;
 
     /* -15: undocumented feature of zlib to _not_ write a zlib header */
-    deflateInit2(&zstr, Z_BEST_COMPRESSION, Z_DEFLATED, -15, 9,
+    // modified for Zip/Ruby by SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
+    //deflateInit2(&zstr, Z_BEST_COMPRESSION, Z_DEFLATED, -15, 9,
+    deflateInit2(&zstr, comp_level, Z_DEFLATED, -15, 9,
 		 Z_DEFAULT_STRATEGY);
 
     zstr.next_out = (Bytef *)b2;

@@ -112,6 +112,8 @@ struct zip {
     int nfile;			/* number of opened files within archive */
     int nfile_alloc;		/* number of files allocated */
     struct zip_file **file;	/* opened files within archive */
+    // modified for Zip/Ruby by SUGAWARA Genki <sgwr_dts@yahoo.co.jp>
+    int comp_level;
 };
 
 /* file in zip archive, part of API */

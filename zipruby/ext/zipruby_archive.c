@@ -1,6 +1,8 @@
 #include <errno.h>
+#include <zlib.h>
 
 #include "zip.h"
+#include "zipint.h"
 #include "zipruby.h"
 #include "zipruby_archive.h"
 #include "zipruby_zip_source_proc.h"
@@ -140,17 +142,26 @@ static void zipruby_archive_free(struct zipruby_archive *p) {
 
 /* */
 static VALUE zipruby_archive_s_open(int argc, VALUE *argv, VALUE self) {
-  VALUE path, flags;
+  VALUE path, flags, comp_level;
   VALUE archive;
   struct zipruby_archive *p_archive;
   int i_flags = 0;
   int errorp;
+  int i_comp_level = Z_BEST_COMPRESSION;
 
-  rb_scan_args(argc, argv, "11", &path, &flags);
+  rb_scan_args(argc, argv, "12", &path, &flags, &comp_level);
   Check_Type(path, T_STRING);
 
   if (!NIL_P(flags)) {
     i_flags = NUM2INT(flags);
+  }
+
+  if (!NIL_P(comp_level)) {
+    i_comp_level = NUM2INT(comp_level);
+
+    if (i_comp_level != Z_DEFAULT_COMPRESSION && i_comp_level != Z_NO_COMPRESSION && (i_comp_level < Z_BEST_SPEED || Z_BEST_COMPRESSION < i_comp_level)) {
+      rb_raise(rb_eArgError, "Wrong compression level %d", i_comp_level);
+    }
   }
 
   archive = rb_funcall(Archive, rb_intern("new"), 0);
@@ -162,6 +173,7 @@ static VALUE zipruby_archive_s_open(int argc, VALUE *argv, VALUE self) {
     rb_raise(Error, "Open archive failed - %s: %s", RSTRING_PTR(path), errstr);
   }
 
+  p_archive->archive->comp_level = i_comp_level;
   p_archive->path = path;
   p_archive->flags = i_flags;
   p_archive->sources = rb_ary_new();
@@ -185,16 +197,19 @@ static VALUE zipruby_archive_s_open(int argc, VALUE *argv, VALUE self) {
 
 /* */
 static VALUE zipruby_archive_s_open_buffer(int argc, VALUE *argv, VALUE self) {
-  VALUE buffer, flags;
+  VALUE buffer, flags, comp_level;
   VALUE archive;
   struct zipruby_archive *p_archive;
   void *data = NULL;
   int len = 0, i_flags = 0;
   int errorp;
+  int i_comp_level = Z_BEST_COMPRESSION;
+  int buffer_is_temporary = 0;
 
-  rb_scan_args(argc, argv, "02", &buffer, &flags);
+  rb_scan_args(argc, argv, "03", &buffer, &flags, &comp_level);
 
-  if (FIXNUM_P(buffer) && NIL_P(flags)) {
+  if (FIXNUM_P(buffer) && NIL_P(comp_level)) {
+    comp_level = flags;
     flags = buffer;
     buffer = Qnil;
   }
@@ -203,9 +218,20 @@ static VALUE zipruby_archive_s_open_buffer(int argc, VALUE *argv, VALUE self) {
     i_flags = NUM2INT(flags);
   }
 
+  if (!NIL_P(comp_level)) {
+    i_comp_level = NUM2INT(comp_level);
+
+    if (i_comp_level != Z_DEFAULT_COMPRESSION && i_comp_level != Z_NO_COMPRESSION && (i_comp_level < Z_BEST_SPEED || Z_BEST_COMPRESSION < i_comp_level)) {
+      rb_raise(rb_eArgError, "Wrong compression level %d", i_comp_level);
+    }
+  }
+
   if (i_flags & ZIP_CREATE) {
     if (!NIL_P(buffer)) {
       Check_Type(buffer, T_STRING);
+    } else {
+      buffer = rb_str_new("", 0);
+      buffer_is_temporary = 1;
     }
 
     i_flags = (i_flags | ZIP_TRUNC);
@@ -232,6 +258,7 @@ static VALUE zipruby_archive_s_open_buffer(int argc, VALUE *argv, VALUE self) {
     rb_raise(Error, "Open archive failed: %s", errstr);
   }
 
+  p_archive->archive->comp_level = i_comp_level;
   p_archive->path = rb_str_new2(p_archive->tmpfilnam);
   p_archive->flags = i_flags;
   p_archive->buffer = buffer;
@@ -248,7 +275,7 @@ static VALUE zipruby_archive_s_open_buffer(int argc, VALUE *argv, VALUE self) {
       rb_jump_tag(status);
     }
 
-    return retval;
+    return buffer_is_temporary ? buffer : retval;
   } else {
     return archive;
   }

@@ -66,6 +66,7 @@ _zip_new(struct zip_error *error)
     za->entry = NULL;
     za->nfile = za->nfile_alloc = 0;
     za->file = NULL;
+    za->comp_level = Z_BEST_COMPRESSION;
     
     return za;
 }

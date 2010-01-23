@@ -72,6 +72,7 @@ https://rubyforge.org/frs/?group_id=6124
     
     Zip::Archive.open('filename.zip', Zip::CREATE) do |ar|
       # if overwrite: ..., Zip::CREATE | Zip::TRUNC) do |ar|
+      # specifies compression level: ..., Zip::CREATE, Zip::BEST_SPEED) do |ar|
     
         ar.add_file('foo.txt') # add file to zip archive
     
@@ -181,6 +182,10 @@ https://rubyforge.org/frs/?group_id=6124
     buf = ''
     
     Zip::Archive.open_buffer(buf, Zip::CREATE) do |ar|
+      ar.add_buffer('bar.txt', 'zoo');
+    end
+
+    buf2 = Zip::Archive.open_buffer(Zip::CREATE) do |ar|
       ar.add_buffer('bar.txt', 'zoo');
     end
     
