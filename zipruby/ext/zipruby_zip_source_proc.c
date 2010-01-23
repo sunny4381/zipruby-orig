@@ -41,8 +41,9 @@ static ssize_t read_proc(void *state, void *data, size_t len, enum zip_source_cm
       return -1;
     }
 
+
     if (TYPE(src) != T_STRING) {
-      return 0;
+      src = rb_funcall(src, rb_intern("to_s"), 0);
     }
 
     n = RSTRING_LEN(src);
