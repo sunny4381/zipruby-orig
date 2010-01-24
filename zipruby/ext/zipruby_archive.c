@@ -359,6 +359,10 @@ static VALUE zipruby_archive_close(VALUE self) {
     rb_raise(Error, "Close archive failed: %s", zip_strerror(p_archive->archive));
   }
 
+  if (!NIL_P(p_archive->sources)){
+    rb_ary_clear(p_archive->sources);
+  }
+
   if (!NIL_P(p_archive->buffer) && changed) {
     rb_funcall(p_archive->buffer, rb_intern("replace"), 1, rb_funcall(self, rb_intern("read"), 0));
   }
@@ -1302,6 +1306,10 @@ static VALUE zipruby_archive_commit(VALUE self) {
     zip_unchange_all(p_archive->archive);
     zip_unchange_archive(p_archive->archive);
     rb_raise(Error, "Commit archive failed: %s", zip_strerror(p_archive->archive));
+  }
+
+  if (!NIL_P(p_archive->sources)){
+    rb_ary_clear(p_archive->sources);
   }
 
   if (!NIL_P(p_archive->buffer) && changed) {
