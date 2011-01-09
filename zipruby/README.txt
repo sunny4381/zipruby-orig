@@ -8,9 +8,9 @@ Ruby bindings for libzip.
 
 libzip is a C library for reading, creating, and modifying zip archives.
 
-== Project Page
+== Source Code
 
-http://rubyforge.org/projects/zipruby
+https://bitbucket.org/winebarrel/zipruby
 
 == Install
 
