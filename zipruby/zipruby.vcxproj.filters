@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="ext">
+      <UniqueIdentifier>{cbfd33ca-25e6-4e17-8e31-5f6d0de5e1f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib">
+      <UniqueIdentifier>{b9ff6c88-b400-4df9-9502-283af72227ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\i386-mswin32">
+      <UniqueIdentifier>{4c694af6-999d-48a2-a346-36e5b19876c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib1.9">
+      <UniqueIdentifier>{c513b708-5875-4edf-83bb-16b874034a3d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib1.9\i386-mswin32">
+      <UniqueIdentifier>{033ff89c-6e0e-4724-9bbc-900fb3a8c676}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ext\extconf.rb">
+      <Filter>ext</Filter>
+    </None>
+    <None Include="lib\i386-mswin32\zipruby.so">
+      <Filter>lib\i386-mswin32</Filter>
+    </None>
+    <None Include="lib1.9\i386-mswin32\zipruby.so">
+      <Filter>lib1.9\i386-mswin32</Filter>
+    </None>
+    <None Include="ChangeLog" />
+    <None Include="package.sh" />
+    <None Include="README.txt" />
+    <None Include="zipruby-mswin32.gemspec" />
+    <None Include="zipruby.gemspec" />
+    <None Include="zipruby1.8-mswin32.gemspec" />
+    <None Include="zipruby1.9-mswin32.gemspec" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ext\tmpfile.c">
+      <Filter>ext</Filter>
+    </ClCompile>
+    <ClCompile Include="ext\zipruby.c">
+      <Filter>ext</Filter>
+    </ClCompile>
+    <ClCompile Include="ext\zipruby_archive.c">
+      <Filter>ext</Filter>
+    </ClCompile>
+    <ClCompile Include="ext\zipruby_error.c">
+      <Filter>ext</Filter>
+    </ClCompile>
+    <ClCompile Include="ext\zipruby_file.c">
+      <Filter>ext</Filter>
+    </ClCompile>
+    <ClCompile Include="ext\zipruby_stat.c">
+      <Filter>ext</Filter>
+    </ClCompile>
+    <ClCompile Include="ext\zipruby_zip.c">
+      <Filter>ext</Filter>
+    </ClCompile>
+    <ClCompile Include="ext\zipruby_zip_source_io.c">
+      <Filter>ext</Filter>
+    </ClCompile>
+    <ClCompile Include="ext\zipruby_zip_source_proc.c">
+      <Filter>ext</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ext\tmpfile.h">
+      <Filter>ext</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\zipruby.h">
+      <Filter>ext</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\zipruby_archive.h">
+      <Filter>ext</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\zipruby_error.h">
+      <Filter>ext</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\zipruby_file.h">
+      <Filter>ext</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\zipruby_stat.h">
+      <Filter>ext</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\zipruby_zip.h">
+      <Filter>ext</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\zipruby_zip_source_io.h">
+      <Filter>ext</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\zipruby_zip_source_proc.h">
+      <Filter>ext</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
