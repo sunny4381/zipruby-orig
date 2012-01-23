@@ -46,7 +46,7 @@ extern "C" {
 #include <stdio.h>
 #include <time.h>
 
-#if defined(_WIN32) && !defined(ssize_t)
+#if defined(__MINGW64__) && !defined(ssize_t)
 typedef int ssize_t;
 #endif
 
